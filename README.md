@@ -10,6 +10,14 @@
 
 Web-based passive recon & security posture analyzer. Tech detection, SSL checks, exposure analysis, security-header grading, color-coded dashboard, HTML reports.
 
+## Status overview
+
+- 📦 Latest release: [GitHub Releases](https://github.com/sr-857/vulnvision/releases)
+- 📄 License: [MIT](./LICENSE)
+- 🌐 Live demo: [https://sr-857.github.io/vulnvision](https://sr-857.github.io/vulnvision)
+- 🔍 CodeQL scan: _coming soon_
+- 🐳 Docker image: _planned_
+
 ## 🔍 Overview
 
 VulnVision delivers analyst-friendly reconnaissance by gathering passive intelligence about a target. The MVP highlights:
