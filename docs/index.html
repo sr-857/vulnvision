@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VulnVision · Passive Recon Control Center</title>
     <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.5/dist/chart.umd.min.js" defer></script>
   </head>
   <body>
     <canvas id="background" aria-hidden="true"></canvas>
@@ -52,17 +53,17 @@
           <div class="hero__metrics" aria-label="Recon highlights">
             <article>
               <h3>Targets profiled</h3>
-              <strong>18</strong>
+              <strong data-field="metric-targets">18</strong>
               <span>Passive scans this quarter</span>
             </article>
             <article>
               <h3>Headers graded</h3>
-              <strong>108</strong>
+              <strong data-field="metric-headers">108</strong>
               <span>Browser defenses per scan</span>
             </article>
             <article>
               <h3>Exposures surfaced</h3>
-              <strong>6</strong>
+              <strong data-field="metric-exposures">6</strong>
               <span>High-signal endpoints detected</span>
             </article>
           </div>
@@ -72,13 +73,44 @@
           <h2 class="dashboard__title">Reconnaissance Dashboard</h2>
           <p class="dashboard__subtitle">Live intelligence from passive scans—technology fingerprints, security posture, TLS health, and exposure highlights.</p>
 
+          <form class="scan-form" data-action="scan-form">
+            <div class="scan-form__grid">
+              <label for="api-base">API Endpoint</label>
+              <input
+                id="api-base"
+                type="url"
+                placeholder="https://demo.vulnvision.dev"
+                data-field="api-input"
+                autocomplete="off"
+              />
+            </div>
+            <div class="scan-form__grid">
+              <label for="scan-target">Target URL</label>
+              <div class="scan-form__row">
+                <input
+                  id="scan-target"
+                  type="url"
+                  required
+                  value="https://demo.owasp-juice.shop"
+                  data-field="target-input"
+                  placeholder="https://example.com"
+                />
+                <button class="btn btn--accent" type="submit">Run live scan</button>
+              </div>
+            </div>
+            <p class="scan-form__status" data-field="scan-status">Demo mode using sample data. Provide an API endpoint to run live scans.</p>
+          </form>
+
           <div class="dashboard__grid">
             <article class="card card--risk" id="card-risk">
               <header class="card__header">
                 <h3>Risk Snapshot</h3>
                 <span class="card__badge" data-field="risk-badge">Medium</span>
               </header>
-              <div class="card__body" data-field="risk"></div>
+              <div class="card__body">
+                <div class="card__content" data-field="risk"></div>
+                <canvas class="sparkline" id="riskChart" aria-hidden="true"></canvas>
+              </div>
             </article>
 
             <article class="card card--tech" id="card-tech">
@@ -88,6 +120,7 @@
               </header>
               <div class="card__body">
                 <ul class="tech-list" data-field="tech"></ul>
+                <canvas class="sparkline" id="techChart" aria-hidden="true"></canvas>
               </div>
             </article>
 
@@ -98,6 +131,7 @@
               </header>
               <div class="card__body">
                 <dl class="cert-details" data-field="tls"></dl>
+                <canvas class="sparkline" id="tlsChart" aria-hidden="true"></canvas>
               </div>
             </article>
 
@@ -108,6 +142,7 @@
               </header>
               <div class="card__body">
                 <ul class="exposure-list" data-field="exposure-highlights"></ul>
+                <canvas class="sparkline" id="exposureChart" aria-hidden="true"></canvas>
               </div>
             </article>
           </div>
@@ -232,7 +267,10 @@
     </div>
 
     <script>
-      const DATA = {
+      const SAMPLE_DATA = {
+        target: "https://demo.owasp-juice.shop",
+        scanned_at: new Date().toISOString(),
+        metrics: { targets: 18, headers: 108, exposures: 6 },
         risk: {
           level: "Medium",
           reasons: [
@@ -250,7 +288,7 @@
           Subject: "CN=demo.owasp-juice.shop",
           Issuer: "Cloudflare Inc ECC CA-3",
           Validity: "2025-01-05 → 2025-04-05",
-          "Days Remaining": "32",
+          "Days Remaining": 32,
           Key: "EllipticCurvePublicKey (256 bits)",
           Signature: "ecdsa-with-SHA256",
           findings: ["Certificate expires within 45 days"],
@@ -278,6 +316,7 @@
 
       const background = document.getElementById("background");
       const ctx = background.getContext("2d");
+      const charts = {};
 
       function resizeBackground() {
         background.width = window.innerWidth;
@@ -315,38 +354,41 @@
         }
       }
 
-      function renderData() {
+      function renderData(data) {
         document.querySelector("[data-field=year]").textContent = new Date().getFullYear();
 
-        // Risk badge
-        document.querySelector("[data-field=risk-badge]").textContent = DATA.risk.level;
-        document.querySelector("[data-field=risk-badge]").className = `card__badge card__badge--${DATA.risk.level.toLowerCase()}`;
+        const metrics = data.metrics || {};
+        document.querySelector("[data-field=metric-targets]").textContent = metrics.targets ?? "—";
+        document.querySelector("[data-field=metric-headers]").textContent = metrics.headers ?? "—";
+        document.querySelector("[data-field=metric-exposures]").textContent = metrics.exposures ?? data.exposures?.length ?? "—";
+
+        const riskBadgeEl = document.querySelector("[data-field=risk-badge]");
+        riskBadgeEl.textContent = data.risk.level;
+        riskBadgeEl.className = `card__badge card__badge--${(data.risk.level || "unknown").toLowerCase()}`;
 
         const riskNode = document.querySelector("[data-field=risk]");
+        riskNode.innerHTML = "";
         const list = document.createElement("ul");
         list.className = "risk-list";
-        DATA.risk.reasons.forEach(reason => {
+        (data.risk.reasons || []).forEach(reason => {
           const li = document.createElement("li");
           li.textContent = reason;
           list.appendChild(li);
         });
         riskNode.appendChild(list);
 
-        // Tech count
-        document.querySelector("[data-field=tech-count]").textContent = `${DATA.tech_stack.length} detected`;
+        document.querySelector("[data-field=tech-count]").textContent = `${data.tech_stack.length} detected`;
+        document.querySelector("[data-field=exposure-count]").textContent = `${data.exposures.length} found`;
+        document.querySelector("[data-field=tls-status]").textContent = data.tls.findings?.[0] || "Valid";
 
-        // Exposure count
-        document.querySelector("[data-field=exposure-count]").textContent = `${DATA.exposures.length} found`;
-
-        // TLS status
-        document.querySelector("[data-field=tls-status]").textContent = DATA.tls.findings[0] || "Valid";
-
-        const techPills = document.querySelector("[data-field=tech]");
+        const techList = document.querySelector("[data-field=tech]");
+        techList.innerHTML = "";
         const techTable = document.querySelector("[data-field=tech-table]");
-        DATA.tech_stack.forEach(tech => {
+        techTable.innerHTML = "";
+        data.tech_stack.forEach(tech => {
           const pill = document.createElement("li");
           pill.innerHTML = `<strong>${tech.name}</strong><small>${tech.confidence} · ${tech.evidence}</small>`;
-          techPills.appendChild(pill);
+          techList.appendChild(pill);
 
           const row = document.createElement("tr");
           row.innerHTML = `<td>${tech.name}</td><td>${tech.confidence}</td><td><code>${tech.evidence}</code></td>`;
@@ -354,7 +396,8 @@
         });
 
         const tlsDef = document.querySelector("[data-field=tls]");
-        Object.entries(DATA.tls)
+        tlsDef.innerHTML = "";
+        Object.entries(data.tls)
           .filter(([key]) => key !== "findings")
           .forEach(([label, value]) => {
             const dt = document.createElement("dt");
@@ -365,10 +408,11 @@
             tlsDef.appendChild(dd);
           });
 
-
         const exposureHighlightList = document.querySelector("[data-field=exposure-highlights]");
+        exposureHighlightList.innerHTML = "";
         const exposuresTable = document.querySelector("[data-field=exposures]");
-        DATA.exposures.forEach(exposure => {
+        exposuresTable.innerHTML = "";
+        data.exposures.forEach(exposure => {
           const pill = document.createElement("li");
           pill.innerHTML = `<strong>${exposure.path}</strong><small>${exposure.risk} risk • ${exposure.detail}</small>`;
           exposureHighlightList.appendChild(pill);
@@ -384,7 +428,8 @@
         });
 
         const headersTable = document.querySelector("[data-field=headers]");
-        DATA.headers.forEach(header => {
+        headersTable.innerHTML = "";
+        data.headers.forEach(header => {
           const row = document.createElement("tr");
           row.innerHTML = `
             <td>${header.header}</td>
@@ -396,16 +441,304 @@
         });
 
         const responseTable = document.querySelector("[data-field=response]");
-        Object.entries(DATA.responseHeaders).forEach(([name, value]) => {
+        responseTable.innerHTML = "";
+        Object.entries(data.responseHeaders || {}).forEach(([name, value]) => {
           const row = document.createElement("tr");
           row.innerHTML = `<td>${name}</td><td><code>${value}</code></td>`;
           responseTable.appendChild(row);
         });
+
+        renderCharts(data);
+      }
+
+      function computeHeaderCounts(headers) {
+        const counts = { secure: 0, needs_review: 0, missing: 0 };
+        headers.forEach(header => {
+          const key = header.status_original || header.status || "";
+          const normalized = key.toLowerCase().replace(/\s+/g, "_");
+          if (normalized in counts) {
+            counts[normalized] += 1;
+          }
+        });
+        return counts;
+      }
+
+      function computeExposureCounts(exposures) {
+        const counts = { High: 0, Medium: 0, Low: 0 };
+        exposures.forEach(exposure => {
+          const key = (exposure.risk || "").toLowerCase();
+          const title = key.charAt(0).toUpperCase() + key.slice(1);
+          if (title in counts) {
+            counts[title] += 1;
+          }
+        });
+        return counts;
+      }
+
+      function computeConfidenceCounts(stack) {
+        const counts = { High: 0, Medium: 0, Low: 0 };
+        stack.forEach(tech => {
+          const key = (tech.confidence || "").toLowerCase();
+          const title = key.charAt(0).toUpperCase() + key.slice(1);
+          if (title in counts) {
+            counts[title] += 1;
+          }
+        });
+        return counts;
+      }
+
+      function renderCharts(data) {
+        if (!window.Chart) {
+          return;
+        }
+
+        if (!renderCharts.initialized) {
+          Chart.defaults.color = "#dbe4ff";
+          Chart.defaults.font.family = "Inter, system-ui, sans-serif";
+          Chart.defaults.font.weight = 500;
+          renderCharts.initialized = true;
+        }
+
+        const riskCtx = document.getElementById("riskChart");
+        if (riskCtx) {
+          charts.risk?.destroy();
+          const headerCounts = computeHeaderCounts(data.headers);
+          charts.risk = new Chart(riskCtx, {
+            type: "doughnut",
+            data: {
+              labels: ["Secure", "Needs review", "Missing"],
+              datasets: [
+                {
+                  data: [headerCounts.secure, headerCounts.needs_review, headerCounts.missing],
+                  backgroundColor: ["#53fbb3", "#ffc861", "#ff6f92"],
+                  borderWidth: 0,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              cutout: "68%",
+              plugins: { legend: { display: false }, tooltip: { enabled: true } },
+            },
+          });
+        }
+
+        const exposureCtx = document.getElementById("exposureChart");
+        if (exposureCtx) {
+          charts.exposures?.destroy();
+          const exposureCounts = computeExposureCounts(data.exposures);
+          charts.exposures = new Chart(exposureCtx, {
+            type: "bar",
+            data: {
+              labels: ["High", "Medium", "Low"],
+              datasets: [
+                {
+                  data: [exposureCounts.High, exposureCounts.Medium, exposureCounts.Low],
+                  backgroundColor: ["#ff6f92", "#ffc861", "#53fbb3"],
+                  borderRadius: 12,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                x: { display: false, stacked: true },
+                y: { display: false, beginAtZero: true },
+              },
+              plugins: { legend: { display: false }, tooltip: { enabled: true } },
+            },
+          });
+        }
+
+        const techCtx = document.getElementById("techChart");
+        if (techCtx) {
+          charts.tech?.destroy();
+          const confidenceCounts = computeConfidenceCounts(data.tech_stack);
+          charts.tech = new Chart(techCtx, {
+            type: "line",
+            data: {
+              labels: ["Low", "Medium", "High"],
+              datasets: [
+                {
+                  data: [confidenceCounts.Low, confidenceCounts.Medium, confidenceCounts.High],
+                  borderColor: "#12c8ff",
+                  backgroundColor: "rgba(18, 200, 255, 0.25)",
+                  tension: 0.4,
+                  fill: true,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                x: { display: false },
+                y: { display: false, beginAtZero: true },
+              },
+              plugins: { legend: { display: false }, tooltip: { enabled: true } },
+            },
+          });
+        }
+
+        const tlsCtx = document.getElementById("tlsChart");
+        if (tlsCtx) {
+          charts.tls?.destroy();
+          const daysRemaining = Number.parseInt(data.tls["Days Remaining"], 10);
+          const normalizedDays = Number.isFinite(daysRemaining) ? Math.max(daysRemaining, 0) : 0;
+          const cap = Math.max(normalizedDays, 90);
+          charts.tls = new Chart(tlsCtx, {
+            type: "doughnut",
+            data: {
+              labels: ["Days remaining", "Until 0"],
+              datasets: [
+                {
+                  data: [normalizedDays, Math.max(cap - normalizedDays, 0)],
+                  backgroundColor: ["#53fbb3", "rgba(18, 200, 255, 0.18)"],
+                  borderWidth: 0,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              cutout: "72%",
+              plugins: { legend: { display: false }, tooltip: { enabled: true } },
+            },
+          });
+        }
+      }
+
+      function transformApiResult(result) {
+        const statusMap = {
+          missing: "Missing",
+          needs_review: "Needs review",
+          secure: "Secure",
+        };
+
+        const confidenceTitle = confidence => {
+          const value = (confidence || "Unknown").toString();
+          return value.charAt(0).toUpperCase() + value.slice(1);
+        };
+
+        const summary = result.ssl?.summary || {};
+        const daysRemaining = summary.days_remaining ?? "—";
+        const validity = summary.not_before && summary.not_after
+          ? `${new Date(summary.not_before).toISOString().slice(0, 10)} → ${new Date(summary.not_after).toISOString().slice(0, 10)}`
+          : "—";
+
+        const tls = {
+          Subject: summary.subject || "—",
+          Issuer: summary.issuer || "—",
+          Validity: validity,
+          "Days Remaining": daysRemaining,
+          Key: summary.key_type
+            ? `${summary.key_type}${summary.key_size ? ` (${summary.key_size} bits)` : ""}`
+            : "—",
+          Signature: summary.signature_algorithm || "—",
+          findings: (result.ssl?.findings || []).map(finding => finding.message).filter(Boolean),
+        };
+
+        if (summary.san?.length) {
+          tls.SAN = summary.san.join(", ");
+        }
+
+        return {
+          target: result.target,
+          scanned_at: result.scanned_at,
+          metrics: SAMPLE_DATA.metrics,
+          risk: {
+            level: result.risk?.level || "Unknown",
+            reasons: result.risk?.reasons || ["No significant issues detected"],
+          },
+          tech_stack: (result.tech_stack || []).map(tech => ({
+            name: tech.name,
+            confidence: confidenceTitle(tech.confidence),
+            evidence: tech.evidence || "—",
+          })),
+          tls,
+          exposures: (result.exposures || []).map(exposure => ({
+            path: exposure.path || exposure.detail || "—",
+            status: exposure.status || "—",
+            risk: confidenceTitle(exposure.risk),
+            detail: exposure.detail || "",
+          })),
+          headers: (result.security_headers || []).map(header => {
+            const original = header.status || "";
+            const normalized = original.toLowerCase();
+            const status = statusMap[normalized] || confidenceTitle(original);
+            return {
+              header: header.header,
+              status,
+              status_original: original,
+              value: header.value ?? "—",
+              note: header.note ?? "",
+            };
+          }),
+          responseHeaders: result.response_headers || {},
+        };
       }
 
       document.addEventListener("DOMContentLoaded", () => {
         resizeBackground();
-        renderData();
+
+        const params = new URLSearchParams(window.location.search);
+        let apiBase = (window.VULNVISION_API_BASE || params.get("api") || "").trim();
+        apiBase = apiBase.replace(/\/$/, "");
+
+        const form = document.querySelector("[data-action=scan-form]");
+        const apiInput = document.querySelector("[data-field=api-input]");
+        const targetInput = document.querySelector("[data-field=target-input]");
+        const statusEl = document.querySelector("[data-field=scan-status]");
+
+        apiInput.value = apiBase;
+
+        renderData(SAMPLE_DATA);
+        statusEl.textContent = apiBase
+          ? `Attempting live scan via ${apiBase} …`
+          : "Demo mode using sample data. Provide an API endpoint to run live scans.";
+
+        async function runScan(target) {
+          if (!apiBase) {
+            statusEl.textContent = "No API endpoint configured. Showing sample data.";
+            renderData(SAMPLE_DATA);
+            return;
+          }
+
+          statusEl.textContent = `Scanning ${target} …`;
+          try {
+            const response = await fetch(`${apiBase}/scan`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ target }),
+            });
+
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}`);
+            }
+
+            const payload = await response.json();
+            const transformed = transformApiResult(payload);
+            renderData(transformed);
+            statusEl.textContent = `Live scan complete • ${new Date(transformed.scanned_at).toLocaleString()}`;
+          } catch (error) {
+            console.error("Scan failed", error);
+            statusEl.textContent = `Scan failed (${error.message}). Showing sample data.`;
+            renderData(SAMPLE_DATA);
+          }
+        }
+
+        form.addEventListener("submit", event => {
+          event.preventDefault();
+          apiBase = (apiInput.value || "").trim().replace(/\/$/, "");
+          runScan(targetInput.value.trim());
+        });
+
+        if (apiBase) {
+          runScan(targetInput.value.trim());
+        }
+
         window.addEventListener("resize", resizeBackground);
       });
     </script>

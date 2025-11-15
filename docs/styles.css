@@ -358,6 +358,12 @@ body {
   gap: 0.8rem;
 }
 
+.card__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
 .tech-list,
 .exposure-list {
   list-style: none;
@@ -485,6 +491,17 @@ body {
   padding-left: 1.3rem;
   color: rgba(226, 232, 240, 0.9);
   line-height: 1.6;
+}
+
+.sparkline {
+  width: 100%;
+  min-height: 110px;
+  max-height: 160px;
+  background: rgba(9, 20, 48, 0.78);
+  border: 1px solid rgba(82, 112, 220, 0.24);
+  border-radius: 0.95rem;
+  padding: 0.35rem;
+  box-shadow: inset 0 0 24px rgba(4, 12, 36, 0.54);
 }
 
 .pill {
