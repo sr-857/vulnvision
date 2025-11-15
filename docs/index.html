@@ -69,43 +69,45 @@
         </header>
 
         <section class="dashboard" id="dashboard">
+          <h2 class="dashboard__title">Reconnaissance Dashboard</h2>
+          <p class="dashboard__subtitle">Live intelligence from passive scans—technology fingerprints, security posture, TLS health, and exposure highlights.</p>
+
           <div class="dashboard__grid">
-            <article class="panel" id="card-risk">
-              <header>
-                <h2>Risk Snapshot</h2>
-                <span>Aggregated posture across headers, TLS, and exposures.</span>
+            <article class="card card--risk" id="card-risk">
+              <header class="card__header">
+                <h3>Risk Snapshot</h3>
+                <span class="card__badge" data-field="risk-badge">Medium</span>
               </header>
-              <div class="panel__body" data-field="risk"></div>
+              <div class="card__body" data-field="risk"></div>
             </article>
 
-            <article class="panel" id="card-tech">
-              <header>
-                <h2>Technology Fingerprints</h2>
-                <span>Frameworks and infrastructure inferred passively.</span>
+            <article class="card card--tech" id="card-tech">
+              <header class="card__header">
+                <h3>Technology Stack</h3>
+                <span class="card__count" data-field="tech-count">3 detected</span>
               </header>
-              <div class="panel__body">
-                <ul class="pill-list" data-field="tech"></ul>
+              <div class="card__body">
+                <ul class="tech-list" data-field="tech"></ul>
               </div>
             </article>
 
-            <article class="panel" id="card-tls">
-              <header>
-                <h2>TLS Intelligence</h2>
-                <span>Certificate summary and actionable warnings.</span>
+            <article class="card card--tls" id="card-tls">
+              <header class="card__header">
+                <h3>TLS Certificate</h3>
+                <span class="card__status" data-field="tls-status">Expires soon</span>
               </header>
-              <div class="panel__body">
-                <dl class="definition" data-field="tls"></dl>
-                <ul class="pill-list pill-list--inline" data-field="tls-findings"></ul>
+              <div class="card__body">
+                <dl class="cert-details" data-field="tls"></dl>
               </div>
             </article>
 
-            <article class="panel" id="card-exposures">
-              <header>
-                <h2>Passive Exposures</h2>
-                <span>High-signal endpoints flagged without intrusive probing.</span>
+            <article class="card card--exposures" id="card-exposures">
+              <header class="card__header">
+                <h3>Passive Exposures</h3>
+                <span class="card__count" data-field="exposure-count">3 found</span>
               </header>
-              <div class="panel__body">
-                <ul class="pill-list" data-field="exposure-highlights"></ul>
+              <div class="card__body">
+                <ul class="exposure-list" data-field="exposure-highlights"></ul>
               </div>
             </article>
           </div>
@@ -316,18 +318,28 @@
       function renderData() {
         document.querySelector("[data-field=year]").textContent = new Date().getFullYear();
 
+        // Risk badge
+        document.querySelector("[data-field=risk-badge]").textContent = DATA.risk.level;
+        document.querySelector("[data-field=risk-badge]").className = `card__badge card__badge--${DATA.risk.level.toLowerCase()}`;
+
         const riskNode = document.querySelector("[data-field=risk]");
-        const badge = document.createElement("span");
-        badge.className = `pill pill--${DATA.risk.level.toLowerCase()}`;
-        badge.textContent = DATA.risk.level;
         const list = document.createElement("ul");
+        list.className = "risk-list";
         DATA.risk.reasons.forEach(reason => {
           const li = document.createElement("li");
           li.textContent = reason;
           list.appendChild(li);
         });
-        riskNode.appendChild(badge);
         riskNode.appendChild(list);
+
+        // Tech count
+        document.querySelector("[data-field=tech-count]").textContent = `${DATA.tech_stack.length} detected`;
+
+        // Exposure count
+        document.querySelector("[data-field=exposure-count]").textContent = `${DATA.exposures.length} found`;
+
+        // TLS status
+        document.querySelector("[data-field=tls-status]").textContent = DATA.tls.findings[0] || "Valid";
 
         const techPills = document.querySelector("[data-field=tech]");
         const techTable = document.querySelector("[data-field=tech-table]");
@@ -353,13 +365,6 @@
             tlsDef.appendChild(dd);
           });
 
-        const tlsList = document.querySelector("[data-field=tls-findings]");
-        DATA.tls.findings.forEach(f => {
-          const pill = document.createElement("li");
-          pill.className = "pill pill--medium";
-          pill.textContent = f;
-          tlsList.appendChild(pill);
-        });
 
         const exposureHighlightList = document.querySelector("[data-field=exposure-highlights]");
         const exposuresTable = document.querySelector("[data-field=exposures]");
