@@ -1,35 +1,34 @@
-# VulnVision — MVP
+# VulnVision 🚀
 
 **One-liner:** Browser-first passive recon & misconfiguration analyzer.
 
 **Demo:** Start backend (`uvicorn backend.main:app --reload`), open `frontend/index.html`, enter a domain, click **Scan**, then export the HTML report — under 60 seconds.
 
-**Ethics:** This tool performs non-intrusive, passive checks only. Scan targets only with explicit permission.
+> **Ethics:** VulnVision performs non-intrusive, passive checks only. Scan targets exclusively with explicit permission.
 
 ---
 
-Web-based passive reconnaissance and misconfiguration analysis platform.
+Web-based passive recon & security posture analyzer. Tech detection, SSL checks, exposure analysis, security-header grading, color-coded dashboard, HTML reports.
 
-## Overview
+## 🔍 Overview
 
-VulnVision delivers non-intrusive triage for security analysts by collecting passive intelligence about a target domain. The MVP focuses on:
+VulnVision delivers analyst-friendly reconnaissance by gathering passive intelligence about a target. The MVP highlights:
 
-- Technology detection
-- Security header auditing
-- SSL/TLS certificate review
-- Exposure checks for common misconfigurations
-- Analyst-friendly risk classification
-- Color-coded dashboard for quick scanning
-- Exportable HTML report for sharing results
+- 🧠 Technology fingerprints
+- 🛡️ Security-header grading
+- 🔐 SSL/TLS certificate inspection
+- 🚪 Exposure spotting for common misconfigurations
+- 📊 Risk classification with clear rationale
+- 🎨 Color-coded dashboard and exportable HTML report
 
-## Stack
+## 🧰 Tech Stack
 
 - **Backend:** FastAPI, requests, dnspython
 - **Frontend:** HTML, TailwindCSS, Alpine.js
 - **Reporting:** Jinja2 templates rendered server-side
 - **Runtime:** Uvicorn
 
-## Project Layout
+## 🗂️ Project Layout
 
 ```
 vulnvision/
@@ -45,12 +44,16 @@ vulnvision/
  │   ├── index.html
  │   ├── dashboard.js
  │   └── styles.css
+ ├── examples/
+ │   └── README.md
+ ├── .github/workflows/
+ │   └── ci.yml
  ├── README.md
  ├── LICENSE
  └── .gitignore
 ```
 
-## Quick Start
+## ⚡ Quick Start
 
 1. Install dependencies:
    ```bash
@@ -60,14 +63,19 @@ vulnvision/
    ```bash
    uvicorn backend.main:app --reload
    ```
-3. Open `frontend/index.html` in your browser to access the dashboard.
+3. Open `frontend/index.html` in your browser, enter a target URL, and click **Scan**.
 
-## Demo Assets
+## 🎬 Demo Assets
 
-- Export an HTML report from a safe target (e.g., OWASP Juice Shop) and save it as `examples/demo_report.html` for judges to preview without running a scan.
-- Capture screenshots of the dashboard (`screenshots/dashboard.png`) and generated report (`screenshots/report.png`) to showcase the UI in submission materials.
-- See additional guidance in `examples/README.md`.
+- Export a sample HTML report (e.g., OWASP Juice Shop) to `examples/demo_report.html` for offline judging.
+- Capture dashboard and report screenshots (`screenshots/dashboard.png`, `screenshots/report.png`).
+- See `examples/README.md` for guidance on organizing media.
 
-## License
+## 📦 Release Checklist
+
+- Tag the MVP release: `git tag -a v0.1 -m "vulnvision: MVP release" && git push origin v0.1`
+- Publish release notes with feature summary and demo links.
+
+## 📄 License
 
 Released under the MIT License. See [LICENSE](LICENSE).
