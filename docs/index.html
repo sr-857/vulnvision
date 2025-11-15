@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VulnVision — Passive Recon Dashboard (Live Demo)</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" integrity="sha384-cfB3fNeY+NNoF9VWgDXMKkjIElYw31wMGkDJ9E5Qf4fG8BTaUChlQhbTTvXvb/4M" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
+</head>
+<body class="bg-slate-950 text-slate-100" x-data="demo()">
+  <header class="border-b border-slate-800 bg-slate-900/80">
+    <div class="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-12 lg:flex-row lg:items-center lg:justify-between">
+      <div>
+        <p class="text-sm uppercase tracking-[0.4em] text-emerald-400">Live Demo</p>
+        <h1 class="mt-3 text-4xl font-bold text-white md:text-5xl">VulnVision — Passive Recon Dashboard</h1>
+        <p class="mt-5 max-w-3xl text-lg text-slate-300">
+          Browser-first passive reconnaissance assistant. Discover technology fingerprints, audit security headers,
+          analyse TLS posture, spot exposures, and export analyst-ready HTML reports—without intrusive scans.
+        </p>
+        <div class="mt-6 flex flex-wrap gap-3 text-sm">
+          <span class="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-emerald-200">
+            <span class="inline-block h-2 w-2 animate-pulse rounded-full bg-emerald-400"></span> Passive only
+          </span>
+          <a class="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-800/70 px-3 py-1 text-slate-200 transition hover:border-emerald-400" href="https://github.com/sr-857/vulnvision" target="_blank" rel="noopener">View source →</a>
+          <a class="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-800/70 px-3 py-1 text-slate-200 transition hover:border-emerald-400" href="../README.md" target="_blank" rel="noopener">README →</a>
+        </div>
+      </div>
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl shadow-emerald-500/10">
+        <h2 class="text-sm font-semibold uppercase tracking-widest text-slate-400">60s Demo Script</h2>
+        <ol class="mt-3 list-decimal space-y-2 pl-5 text-sm text-slate-200">
+          <li>Run <code class="rounded bg-slate-800 px-1">uvicorn backend.main:app --reload --port 8000</code></li>
+          <li>Open <code class="rounded bg-slate-800 px-1">frontend/index.html</code></li>
+          <li>Scan <code class="rounded bg-slate-800 px-1">https://demo.owasp-juice.shop</code></li>
+          <li>Explain risk badge, headers, SSL, exposures, and tech stack</li>
+          <li>Export the HTML report for handoff</li>
+        </ol>
+      </div>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-6xl space-y-12 px-6 py-12">
+    <section class="grid gap-6 md:grid-cols-3">
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+        <h2 class="text-sm font-semibold uppercase tracking-widest text-slate-400">Scan Target</h2>
+        <p class="mt-2 text-lg font-semibold text-white" x-text="sample.target"></p>
+        <p class="text-sm text-slate-400" x-text="`Resolved URL: ${sample.fetched_url}`"></p>
+        <p class="mt-4 text-sm text-slate-300" x-text="`Status Code: ${sample.status_code}`"></p>
+        <p class="text-sm text-slate-300" x-text="`Server IP: ${sample.server_ip}`"></p>
+      </div>
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+        <h2 class="text-sm font-semibold uppercase tracking-widest text-slate-400">Risk Snapshot</h2>
+        <p class="mt-2 inline-flex items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-base font-semibold text-emerald-200" x-text="sample.risk.level"></p>
+        <ul class="mt-4 space-y-2 text-sm text-slate-300">
+          <template x-for="reason in sample.risk.reasons" :key="reason">
+            <li class="flex gap-2">
+              <span class="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+              <span x-text="reason"></span>
+            </li>
+          </template>
+        </ul>
+      </div>
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+        <h2 class="text-sm font-semibold uppercase tracking-widest text-slate-400">Why passive?</h2>
+        <p class="mt-2 text-sm text-slate-300">
+          VulnVision issues a single HTTP request, inspects headers/body, and performs TLS handshakes to gather intelligence without touching restricted endpoints or brute forcing credentials.
+        </p>
+        <p class="mt-3 text-sm text-slate-300">
+          Every finding is read-only, making it safe for bug bounty triage, classroom demos, and hackathons.
+        </p>
+      </div>
+    </section>
+
+    <section class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+      <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h2 class="text-2xl font-semibold text-white">Technology Stack</h2>
+          <p class="text-sm text-slate-400">Passive fingerprints extracted from headers, HTML, and assets.</p>
+        </div>
+        <a class="text-sm font-semibold text-emerald-300 hover:text-emerald-200" href="https://github.com/sr-857/vulnvision/blob/main/backend/scanners/techdetect.py" target="_blank" rel="noopener">View scanner →</a>
+      </div>
+      <div class="mt-6 grid gap-4 md:grid-cols-3">
+        <template x-for="tech in sample.tech_stack" :key="tech.name">
+          <div class="rounded-xl border border-slate-800 bg-slate-900/80 p-4">
+            <p class="text-lg font-semibold text-white" x-text="tech.name"></p>
+            <p class="mt-1 text-xs uppercase tracking-widest text-emerald-300" x-text="`Confidence: ${tech.confidence}`"></p>
+            <p class="mt-3 text-sm text-slate-300" x-text="tech.evidence"></p>
+          </div>
+        </template>
+      </div>
+    </section>
+
+    <section class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+      <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h2 class="text-2xl font-semibold text-white">Security Headers</h2>
+          <p class="text-sm text-slate-400">MVP focuses on browser-facing controls that stop clickjacking, MIME sniffing, and downgrade attacks.</p>
+        </div>
+        <a class="text-sm font-semibold text-emerald-300 hover:text-emerald-200" href="https://github.com/sr-857/vulnvision/blob/main/backend/scanners/headers.py" target="_blank" rel="noopener">View scanner →</a>
+      </div>
+      <div class="mt-6 overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-800 text-sm">
+          <thead class="bg-slate-800/60 text-slate-300">
+            <tr>
+              <th class="px-3 py-2 text-left font-semibold">Header</th>
+              <th class="px-3 py-2 text-left font-semibold">Status</th>
+              <th class="px-3 py-2 text-left font-semibold">Value</th>
+              <th class="px-3 py-2 text-left font-semibold">Note</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800 text-slate-200">
+            <template x-for="header in sample.security_headers" :key="header.header">
+              <tr>
+                <td class="px-3 py-2" x-text="header.header"></td>
+                <td class="px-3 py-2">
+                  <span class="rounded-full px-3 py-1 text-xs font-semibold" :class="badge(header.status)" x-text="formatStatus(header.status)"></span>
+                </td>
+                <td class="px-3 py-2 font-mono text-xs" x-text="header.value || '—'"></td>
+                <td class="px-3 py-2" x-text="header.note"></td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+      <div class="grid gap-6 lg:grid-cols-2">
+        <div>
+          <h2 class="text-2xl font-semibold text-white">TLS / Certificate Summary</h2>
+          <ul class="mt-4 space-y-2 text-sm text-slate-300">
+            <li><strong>Subject:</strong> <span x-text="sample.ssl.summary.subject"></span></li>
+            <li><strong>Issuer:</strong> <span x-text="sample.ssl.summary.issuer"></span></li>
+            <li><strong>Valid:</strong> <span x-text="`${sample.ssl.summary.not_before} → ${sample.ssl.summary.not_after}`"></span></li>
+            <li><strong>Days remaining:</strong> <span x-text="sample.ssl.summary.days_remaining"></span></li>
+            <li><strong>Key:</strong> <span x-text="`${sample.ssl.summary.key_type} (${sample.ssl.summary.key_size} bits)`"></span></li>
+            <li><strong>Signature:</strong> <span x-text="sample.ssl.summary.signature_algorithm"></span></li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="text-lg font-semibold text-white">Findings</h3>
+          <ul class="mt-3 space-y-2 text-sm text-slate-300">
+            <template x-for="finding in sample.ssl.findings" :key="finding.message">
+              <li class="flex items-center gap-2">
+                <span class="rounded-full px-3 py-1 text-xs font-semibold" :class="badge(finding.severity)" x-text="capitalize(finding.severity)"></span>
+                <span x-text="finding.message"></span>
+              </li>
+            </template>
+            <template x-if="!sample.ssl.findings.length">
+              <li class="text-slate-500">No issues detected.</li>
+            </template>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+      <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h2 class="text-2xl font-semibold text-white">Exposure Checks</h2>
+          <p class="text-sm text-slate-400">Passive probes for high-signal misconfigurations and sensitive endpoints.</p>
+        </div>
+        <a class="text-sm font-semibold text-emerald-300 hover:text-emerald-200" href="https://github.com/sr-857/vulnvision/blob/main/backend/scanners/exposure.py" target="_blank" rel="noopener">View scanner →</a>
+      </div>
+      <div class="mt-6 overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-800 text-sm">
+          <thead class="bg-slate-800/60 text-slate-300">
+            <tr>
+              <th class="px-3 py-2 text-left font-semibold">Path</th>
+              <th class="px-3 py-2 text-left font-semibold">Status</th>
+              <th class="px-3 py-2 text-left font-semibold">Risk</th>
+              <th class="px-3 py-2 text-left font-semibold">Detail</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800 text-slate-200">
+            <template x-for="exposure in sample.exposures" :key="exposure.path + exposure.status">
+              <tr>
+                <td class="px-3 py-2" x-text="exposure.path"></td>
+                <td class="px-3 py-2" x-text="exposure.status"></td>
+                <td class="px-3 py-2">
+                  <span class="rounded-full px-3 py-1 text-xs font-semibold" :class="badge(exposure.risk)" x-text="capitalize(exposure.risk)"></span>
+                </td>
+                <td class="px-3 py-2" x-text="exposure.detail"></td>
+              </tr>
+            </template>
+            <template x-if="!sample.exposures.length">
+              <tr>
+                <td class="px-3 py-4 text-center text-slate-500" colspan="4">No exposures detected.</td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+      <div class="grid gap-6 lg:grid-cols-2">
+        <div>
+          <h2 class="text-2xl font-semibold text-white">Response Headers</h2>
+          <p class="text-sm text-slate-400">Raw headers captured during the passive scan.</p>
+        </div>
+        <div class="text-right text-sm text-slate-400">
+          <a class="font-semibold text-emerald-300 hover:text-emerald-200" href="https://github.com/sr-857/vulnvision/blob/main/backend/main.py" target="_blank" rel="noopener">View orchestration →</a>
+        </div>
+      </div>
+      <div class="mt-6 grid gap-4 md:grid-cols-2">
+        <template x-for="header in headerEntries" :key="header[0]">
+          <div class="rounded-xl border border-slate-800 bg-slate-900/80 p-4">
+            <p class="text-xs uppercase tracking-widest text-slate-400" x-text="header[0]"></p>
+            <p class="mt-2 font-mono text-xs text-slate-200" x-text="header[1]"></p>
+          </div>
+        </template>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-slate-800 bg-slate-900/80">
+    <div class="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-8 text-sm text-slate-400 md:flex-row md:items-center md:justify-between">
+      <p>© 2025 VulnVision · MIT License</p>
+      <nav class="flex flex-wrap gap-4">
+        <a class="hover:text-emerald-300" href="https://github.com/sr-857/vulnvision" target="_blank" rel="noopener">GitHub</a>
+        <a class="hover:text-emerald-300" href="../docs/architecture.md" target="_blank" rel="noopener">Architecture</a>
+        <a class="hover:text-emerald-300" href="../README.md" target="_blank" rel="noopener">README</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>
+    function demo() {
+      const sample = {
+        target: "https://demo.owasp-juice.shop",
+        fetched_url: "https://demo.owasp-juice.shop/",
+        status_code: 200,
+        server_ip: "104.21.59.78",
+        risk: {
+          level: "Medium",
+          reasons: [
+            "Missing security header: Content-Security-Policy",
+            "SSL: Certificate expires within 30 days",
+            "Exposure: robots.txt reveals admin endpoints"
+          ],
+        },
+        tech_stack: [
+          { name: "Angular", confidence: "High", evidence: "script src=/main-es2015.js" },
+          { name: "Express.js", confidence: "Medium", evidence: "x-powered-by: Express" },
+          { name: "Cloudflare", confidence: "Medium", evidence: "server: cloudflare" }
+        ],
+        security_headers: [
+          { header: "Content-Security-Policy", status: "missing", value: null, note: "Header not present" },
+          { header: "X-Frame-Options", status: "needs_review", value: "ALLOWALL", note: "Unexpected value `ALLOWALL`" },
+          { header: "X-Content-Type-Options", status: "secure", value: "nosniff", note: "OK" },
+          { header: "Strict-Transport-Security", status: "secure", value: "max-age=31536000; includeSubDomains", note: "OK" },
+          { header: "Referrer-Policy", status: "missing", value: null, note: "Header not present" },
+          { header: "Permissions-Policy", status: "missing", value: null, note: "Header not present" }
+        ],
+        ssl: {
+          summary: {
+            subject: "CN=demo.owasp-juice.shop",
+            issuer: "CN=Cloudflare Inc ECC CA-3",
+            not_before: "2025-01-05",
+            not_after: "2025-04-05",
+            days_remaining: 32,
+            signature_algorithm: "ecdsa-with-SHA256",
+            key_type: "EllipticCurvePublicKey",
+            key_size: 256,
+          },
+          findings: [ { severity: "medium", message: "Certificate expires within 45 days" } ],
+        },
+        exposures: [
+          { path: "/robots.txt", status: "200", risk: "medium", detail: "robots.txt reveals sensitive paths" },
+          { path: "/.git/", status: "403", risk: "low", detail: "Path protected but accessible" }
+        ],
+        response_headers: {
+          "content-type": "text/html; charset=utf-8",
+          "x-powered-by": "Express",
+          server: "cloudflare",
+          "cf-ray": "86b3e5c8790104c5",
+          "cache-control": "public, max-age=0, must-revalidate",
+        },
+      };
+
+      return {
+        sample,
+        headerEntries: Object.entries(sample.response_headers),
+        capitalize(value) {
+          if (!value) return "";
+          return value.charAt(0).toUpperCase() + value.slice(1);
+        },
+        formatStatus(status) {
+          if (!status) return "Unknown";
+          return status.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+        },
+        badge(level) {
+          if (!level) return "bg-slate-800 text-slate-300";
+          const key = level.toLowerCase();
+          if (key === "high" || key === "missing") return "bg-red-500/10 text-red-300 border border-red-500/30";
+          if (key === "medium" || key === "needs_review") return "bg-amber-500/10 text-amber-200 border border-amber-500/30";
+          return "bg-emerald-500/10 text-emerald-200 border border-emerald-500/30";
+        },
+      };
+    }
+  </script>
+</body>
+</html>
