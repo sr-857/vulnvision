@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>VulnVision Sample Report</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" integrity="sha384-cfB3fNeY+NNoF9VWgDXMKkjIElYw31wMGkDJ9E5Qf4fG8BTaUChlQhbTTvXvb/4M" crossorigin="anonymous">
+  <style>
+    body { background: #0f172a; color: #e2e8f0; }
+    .badge { padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; }
+    .badge-low { background: rgba(16, 185, 129, 0.15); color: #a7f3d0; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-medium { background: rgba(251, 191, 36, 0.15); color: #facc15; border: 1px solid rgba(251, 191, 36, 0.3); }
+    .badge-high { background: rgba(248, 113, 113, 0.15); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.3); }
+  </style>
+</head>
+<body class="p-10">
+  <header class="mb-10">
+    <p class="text-sm uppercase tracking-[0.4em] text-emerald-300">Sample Output</p>
+    <h1 class="mt-2 text-4xl font-bold text-white">VulnVision Passive Recon Report</h1>
+    <p class="mt-4 text-slate-300">Target: <strong>https://demo.owasp-juice.shop</strong> · Generated: 2025-05-10T10:15:00Z</p>
+  </header>
+
+  <section class="mb-8 rounded-2xl border border-slate-800 bg-slate-900/80 p-6">
+    <h2 class="text-2xl font-semibold text-white">Risk Snapshot</h2>
+    <div class="mt-4 flex flex-col gap-2 md:flex-row md:items-center md:gap-4">
+      <span class="badge badge-medium">Medium</span>
+      <ul class="list-disc pl-6 text-sm text-slate-300">
+        <li>Missing security header: Content-Security-Policy</li>
+        <li>SSL: Certificate expires within 45 days</li>
+        <li>Exposure: robots.txt reveals admin endpoints</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="mb-8 rounded-2xl border border-slate-800 bg-slate-900/80 p-6">
+    <h2 class="text-2xl font-semibold text-white">Technology Stack</h2>
+    <table class="mt-4 w-full text-sm">
+      <thead class="text-slate-400">
+        <tr>
+          <th class="py-2 text-left">Technology</th>
+          <th class="py-2 text-left">Confidence</th>
+          <th class="py-2 text-left">Evidence</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-800 text-slate-200">
+        <tr><td>Angular</td><td>High</td><td><code>script src=/main-es2015.js</code></td></tr>
+        <tr><td>Express.js</td><td>Medium</td><td><code>x-powered-by: Express</code></td></tr>
+        <tr><td>Cloudflare</td><td>Medium</td><td><code>server: cloudflare</code></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="mb-8 rounded-2xl border border-slate-800 bg-slate-900/80 p-6">
+    <h2 class="text-2xl font-semibold text-white">Security Headers</h2>
+    <table class="mt-4 w-full text-sm">
+      <thead class="text-slate-400">
+        <tr>
+          <th class="py-2 text-left">Header</th>
+          <th class="py-2 text-left">Status</th>
+          <th class="py-2 text-left">Value</th>
+          <th class="py-2 text-left">Note</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-800 text-slate-200">
+        <tr>
+          <td>Content-Security-Policy</td>
+          <td><span class="badge badge-high">Missing</span></td>
+          <td>—</td>
+          <td>Header not present</td>
+        </tr>
+        <tr>
+          <td>X-Frame-Options</td>
+          <td><span class="badge badge-medium">Needs review</span></td>
+          <td>ALLOWALL</td>
+          <td>Unexpected value `ALLOWALL`</td>
+        </tr>
+        <tr>
+          <td>X-Content-Type-Options</td>
+          <td><span class="badge badge-low">Secure</span></td>
+          <td>nosniff</td>
+          <td>OK</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="mb-8 rounded-2xl border border-slate-800 bg-slate-900/80 p-6">
+    <h2 class="text-2xl font-semibold text-white">TLS / Certificate</h2>
+    <p class="mt-2 text-sm text-slate-300">Subject: CN=demo.owasp-juice.shop</p>
+    <p class="text-sm text-slate-300">Issuer: Cloudflare Inc ECC CA-3</p>
+    <p class="text-sm text-slate-300">Validity: 2025-01-05 → 2025-04-05 · Days remaining: 32</p>
+    <p class="text-sm text-slate-300">Key: EllipticCurvePublicKey (256 bits) · Signature: ecdsa-with-SHA256</p>
+    <h3 class="mt-4 text-lg font-semibold text-white">Findings</h3>
+    <ul class="mt-2 space-y-2 text-sm text-slate-300">
+      <li><span class="badge badge-medium">Medium</span> Certificate expires within 45 days</li>
+    </ul>
+  </section>
+
+  <section class="mb-8 rounded-2xl border border-slate-800 bg-slate-900/80 p-6">
+    <h2 class="text-2xl font-semibold text-white">Exposure Checks</h2>
+    <table class="mt-4 w-full text-sm">
+      <thead class="text-slate-400">
+        <tr>
+          <th class="py-2 text-left">Path</th>
+          <th class="py-2 text-left">Status</th>
+          <th class="py-2 text-left">Risk</th>
+          <th class="py-2 text-left">Detail</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-800 text-slate-200">
+        <tr><td>/robots.txt</td><td>200</td><td><span class="badge badge-medium">Medium</span></td><td>robots.txt reveals sensitive paths</td></tr>
+        <tr><td>/.git/</td><td>403</td><td><span class="badge badge-low">Low</span></td><td>Path protected but accessible</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="mb-8 rounded-2xl border border-slate-800 bg-slate-900/80 p-6">
+    <h2 class="text-2xl font-semibold text-white">Response Headers</h2>
+    <ul class="mt-3 space-y-1 font-mono text-xs text-slate-300">
+      <li>content-type: text/html; charset=utf-8</li>
+      <li>x-powered-by: Express</li>
+      <li>server: cloudflare</li>
+      <li>cf-ray: 86b3e5c8790104c5</li>
+      <li>cache-control: public, max-age=0, must-revalidate</li>
+    </ul>
+  </section>
+
+  <footer class="mt-12 text-sm text-slate-500">
+    <p>Generated by VulnVision (sample output). For live scans visit <a class="text-emerald-300 hover:text-emerald-200" href="https://sr-857.github.io/vulnvision" target="_blank" rel="noopener">the demo site</a>.</p>
+  </footer>
+</body>
+</html>
