@@ -1,4 +1,12 @@
-# VulnVision
+# VulnVision — MVP
+
+**One-liner:** Browser-first passive recon & misconfiguration analyzer.
+
+**Demo:** Start backend (`uvicorn backend.main:app --reload`), open `frontend/index.html`, enter a domain, click **Scan**, then export the HTML report — under 60 seconds.
+
+**Ethics:** This tool performs non-intrusive, passive checks only. Scan targets only with explicit permission.
+
+---
 
 Web-based passive reconnaissance and misconfiguration analysis platform.
 
@@ -53,6 +61,12 @@ vulnvision/
    uvicorn backend.main:app --reload
    ```
 3. Open `frontend/index.html` in your browser to access the dashboard.
+
+## Demo Assets
+
+- Export an HTML report from a safe target (e.g., OWASP Juice Shop) and save it as `examples/demo_report.html` for judges to preview without running a scan.
+- Capture screenshots of the dashboard (`screenshots/dashboard.png`) and generated report (`screenshots/report.png`) to showcase the UI in submission materials.
+- See additional guidance in `examples/README.md`.
 
 ## License
 
