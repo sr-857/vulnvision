@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>VulnVision — Passive Recon Dashboard</title>
+    <title>VulnVision · Passive Recon Command Center</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -12,264 +12,267 @@
     />
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body class="page">
-    <section class="hero" id="top">
-      <div class="hero__content">
-        <div class="hero__badge">Passive recon • Static walkthrough</div>
-        <h1 class="hero__title">VulnVision</h1>
-        <p class="hero__subtitle">
-          Browser-first reconnaissance and misconfiguration analysis. VulnVision fingerprints technology stacks,
-          audits security headers, inspects TLS posture, and surfaces low-effort exposures—delivering analyst-ready risk snapshots
-          without intrusive scans.
-        </p>
+  <body>
+    <canvas id="background" aria-hidden="true"></canvas>
+    <div class="page" id="app">
+      <section class="hero" id="top">
+        <div class="hero__content">
+          <div class="hero__badge">Passive recon · Misconfiguration awareness · Hackathon edition</div>
+          <h1 class="hero__title">VulnVision</h1>
+          <p class="hero__subtitle">
+            Browser-first reconnaissance, rebuilt for judges and CISOs alike. VulnVision fingerprints technology stacks,
+            grades browser defenses, inspects TLS posture, and surfaces passive exposures—then wraps everything in a
+            shareable HTML report.
+          </p>
 
-        <div class="hero__actions">
-          <a class="btn btn--accent" href="#dashboard">Launch Interactive Demo</a>
-          <a class="btn" href="https://github.com/sr-857/vulnvision" target="_blank" rel="noopener">View on GitHub</a>
-          <a class="btn" href="https://github.com/sr-857/vulnvision/releases" target="_blank" rel="noopener">Release Notes</a>
-        </div>
-
-        <dl class="hero__stats" aria-label="Key passive recon highlights">
-          <div class="hero__stat">
-            <dt id="stat-targets">0</dt>
-            <dd>Targets profiled</dd>
+          <div class="hero__actions">
+            <a class="btn btn--accent" href="#dashboard">Launch interactive walkthrough</a>
+            <a class="btn" href="https://github.com/sr-857/vulnvision" target="_blank" rel="noopener">View on GitHub</a>
+            <a class="btn" href="#assets">Demo assets</a>
           </div>
-          <div class="hero__stat">
-            <dt id="stat-headers">0</dt>
-            <dd>Security headers graded</dd>
+
+          <dl class="hero__metrics" aria-label="Recon performance">
+            <div class="hero__metric">
+              <dt data-stat="targets">–</dt>
+              <dd>Targets profiled</dd>
+            </div>
+            <div class="hero__metric">
+              <dt data-stat="headers">–</dt>
+              <dd>Headers graded</dd>
+            </div>
+            <div class="hero__metric">
+              <dt data-stat="exposures">–</dt>
+              <dd>Exposures surfaced</dd>
+            </div>
+          </dl>
+        </div>
+
+        <div class="hero__visual" aria-hidden="true">
+          <div class="card">
+            <span class="card__label">Passive recon workflow</span>
+            <ol>
+              <li>Resolve target, capture response metadata.</li>
+              <li>Run modular scanners: tech, headers, TLS, exposures.</li>
+              <li>Score risk + export analyst-ready HTML.</li>
+            </ol>
           </div>
-          <div class="hero__stat">
-            <dt id="stat-exposures">0</dt>
-            <dd>Exposures flagged</dd>
+          <div class="card card--accent">
+            <span class="card__label">Built to win hackathons</span>
+            <ul>
+              <li>Zero intrusive requests—safe for any venue.</li>
+              <li>Tell a compelling security story in under a minute.</li>
+              <li>Hand off proof with beautiful reports and dashboards.</li>
+            </ul>
           </div>
-        </dl>
-      </div>
-
-      <div class="hero__visual" aria-hidden="true">
-        <div class="hero__card">
-          <span class="hero__card-label">Passive Recon Workflow</span>
-          <ol>
-            <li>Resolve target and fetch headers/body</li>
-            <li>Run modular scanners (tech, headers, TLS, exposures)</li>
-            <li>Score risk &amp; export HTML report</li>
-          </ol>
-        </div>
-        <div class="hero__card hero__card--accent">
-          <span class="hero__card-label">Why analysts use VulnVision</span>
-          <ul>
-            <li>Instant misconfiguration triage for bug bounty &amp; GRC</li>
-            <li>Passive-only methodology—safe for conference demos</li>
-            <li>Shareable report artefacts for handoff or judging</li>
-          </ul>
-        </div>
-      </div>
-
-      <a class="hero__scroll" href="#dashboard" aria-label="Scroll to dashboard">Explore the dashboard ↓</a>
-    </section>
-
-    <header class="topbar">
-      <div class="brand">
-        <div class="brand__logo" aria-hidden="true">🛰️</div>
-        <div class="brand__meta">
-          <span class="brand__title">VulnVision</span>
-          <span class="brand__subtitle">Passive Recon · Security Headers · TLS Drilldown</span>
-        </div>
-      </div>
-      <nav class="topbar__actions" aria-label="Demo actions">
-        <button id="action-scan" class="btn btn--accent" type="button">Run Sample Scan</button>
-        <a class="btn" href="../examples/demo_report.html" target="_blank" rel="noopener">View Sample Report</a>
-        <a class="btn" href="https://sr-857.github.io/vulnvision/#demo-assets" rel="noopener">Demo Assets</a>
-      </nav>
-    </header>
-
-    <main class="layout" id="dashboard">
-      <aside class="panel panel--sidebar" aria-label="Operations overview">
-        <h2 class="panel__title">Scan Status</h2>
-        <div class="status" role="status" aria-live="polite">
-          <span class="status__dot" aria-hidden="true"></span>
-          <span id="status-text" class="status__text">Ready to scan</span>
         </div>
 
-        <div class="metrics">
-          <article class="metric-card" aria-live="polite">
-            <h3>Targets</h3>
-            <p id="metric-targets">0</p>
-          </article>
-          <article class="metric-card" aria-live="polite">
-            <h3>Headers Graded</h3>
-            <p id="metric-headers">0</p>
-          </article>
-          <article class="metric-card" aria-live="polite">
-            <h3>Exposures</h3>
-            <p id="metric-exposures">0</p>
-          </article>
-        </div>
-
-        <section class="panel__cta" aria-label="Quick walkthrough">
-          <h3>Passive Recon Steps</h3>
-          <ol>
-            <li>Fetch target and capture response metadata.</li>
-            <li>Grade security headers &amp; infer technology stack.</li>
-            <li>Inspect TLS certificate health.</li>
-            <li>Probe for passive exposures (robots.txt, admin panels).</li>
-            <li>Deliver risk summary + HTML artefact.</li>
-          </ol>
-        </section>
-      </aside>
-
-      <section class="panel panel--main" aria-label="Analyst workspace">
-        <section class="panel__group panel__group--charts" aria-label="Recon summary">
-          <article class="chart-card" id="risk-card">
-            <header>
-              <h2>Risk Assessment</h2>
-              <span class="chart-card__subtitle">Aggregated posture based on headers, TLS, and exposures.</span>
-            </header>
-            <div class="chart-card__canvas" style="padding-bottom: 40%">
-              <div id="risk-content"></div>
-            </div>
-          </article>
-
-          <article class="chart-card" id="tech-card">
-            <header>
-              <h2>Technology Fingerprints</h2>
-              <span class="chart-card__subtitle">Frameworks and infrastructure hints derived from passive signals.</span>
-            </header>
-            <div class="chart-card__canvas" style="padding-bottom: 40%">
-              <ul id="tech-list"></ul>
-            </div>
-          </article>
-
-          <article class="chart-card" id="tls-card">
-            <header>
-              <h2>TLS / Certificate Summary</h2>
-              <span class="chart-card__subtitle">Key attributes from the live certificate chain.</span>
-            </header>
-            <div class="chart-card__canvas" style="padding-bottom: 40%">
-              <ul id="tls-summary"></ul>
-            </div>
-          </article>
-
-          <article class="chart-card" id="exposure-card">
-            <header>
-              <h2>Exposure Highlights</h2>
-              <span class="chart-card__subtitle">High-signal misconfigurations and sensitive endpoints.</span>
-            </header>
-            <div class="chart-card__canvas" style="padding-bottom: 40%">
-              <ul id="exposure-highlights"></ul>
-            </div>
-          </article>
-        </section>
-
-        <section class="panel__group panel__group--tables" aria-label="Detailed findings">
-          <article class="data-card">
-            <header>
-              <h2>Security Headers</h2>
-              <p>Presence and quality of browser-facing controls.</p>
-            </header>
-            <div class="table-wrapper">
-              <table>
-                <thead>
-                  <tr>
-                    <th scope="col">Header</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Value</th>
-                    <th scope="col">Note</th>
-                  </tr>
-                </thead>
-                <tbody id="headers-table"></tbody>
-              </table>
-            </div>
-          </article>
-
-          <article class="data-card">
-            <header>
-              <h2>Passive Exposures</h2>
-              <p>Endpoints with heightened risk or informational value.</p>
-            </header>
-            <div class="table-wrapper">
-              <table>
-                <thead>
-                  <tr>
-                    <th scope="col">Path</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Risk</th>
-                    <th scope="col">Detail</th>
-                  </tr>
-                </thead>
-                <tbody id="exposures-table"></tbody>
-              </table>
-            </div>
-          </article>
-
-          <article class="data-card data-card--wide">
-            <header>
-              <h2>Response Headers</h2>
-              <p>Raw snapshot captured during the passive scan.</p>
-            </header>
-            <div class="table-wrapper">
-              <table>
-                <thead>
-                  <tr>
-                    <th scope="col">Header</th>
-                    <th scope="col">Value</th>
-                  </tr>
-                </thead>
-                <tbody id="response-table"></tbody>
-              </table>
-            </div>
-          </article>
-        </section>
+        <a class="hero__scroll" href="#dashboard" aria-label="Scroll to dashboard">Explore dashboard ↓</a>
       </section>
-    </main>
 
-    <section class="testimonials" id="demo-assets" aria-label="Demo assets">
-      <div class="testimonials__intro">
-        <h2>Demo Resources</h2>
-        <p>
-          Everything you need to showcase VulnVision at hackathons, customer demos, or portfolio reviews. Each asset is derived from a passive scan of OWASP Juice Shop and can be regenerated by following the demo script.
-        </p>
-      </div>
-      <div class="testimonials__grid">
-        <article class="testimonial-card">
-          <header>
-            <h3>Sample HTML Report</h3>
-            <p><a href="../examples/demo_report.html" target="_blank" rel="noopener">Open demo_report.html</a></p>
-          </header>
-          <blockquote>
-            Downloadable artefact mirroring the dashboard layout—ideal for judge handoff and client summaries.
-          </blockquote>
-          <footer>
-            <span class="testimonial-card__role">Generated with `uvicorn` + `/report` endpoint</span>
-          </footer>
-        </article>
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand__icon" aria-hidden="true">🛰️</div>
+          <div class="brand__meta">
+            <span class="brand__title">VulnVision Command Center</span>
+            <span class="brand__subtitle">Passive Recon · Security Headers · TLS Intelligence</span>
+          </div>
+        </div>
+        <nav class="topbar__actions" aria-label="Demo controls">
+          <button class="btn btn--accent" type="button" data-action="scan">Replay sample scan</button>
+          <a class="btn" href="../examples/demo_report.html" target="_blank" rel="noopener">Sample HTML report</a>
+          <a class="btn" href="https://github.com/sr-857/vulnvision/releases" target="_blank" rel="noopener">Release log</a>
+        </nav>
+      </header>
 
-        <article class="testimonial-card">
-          <header>
-            <h3>Docker Specialist Stack</h3>
-            <p><code>./scripts/demo.sh</code></p>
-          </header>
-          <blockquote>
-            One command boots the FastAPI backend and static dashboard, aligning with the live demo shown above.
-          </blockquote>
-          <footer>
-            <span class="testimonial-card__role">Frontend :8080 · Backend :8000</span>
-          </footer>
-        </article>
-      </div>
-    </section>
+      <main class="grid" id="dashboard">
+        <aside class="panel panel--sidebar" aria-label="Recon checklist">
+          <section>
+            <h2 class="panel__title">Scan status</h2>
+            <div class="status" role="status" aria-live="polite">
+              <span class="status__dot" aria-hidden="true"></span>
+              <span class="status__text" data-field="status">Ready for launch</span>
+            </div>
+          </section>
 
-    <footer class="footer">
-      <p>© <span id="footer-year"></span> VulnVision · Passive recon &amp; misconfiguration intelligence.</p>
-    </footer>
+          <section>
+            <div class="metric-cards">
+              <article class="metric" aria-live="polite">
+                <h3>Targets profiled</h3>
+                <p data-field="metric-targets">18</p>
+              </article>
+              <article class="metric" aria-live="polite">
+                <h3>Headers graded</h3>
+                <p data-field="metric-headers">108</p>
+              </article>
+              <article class="metric" aria-live="polite">
+                <h3>Exposures flagged</h3>
+                <p data-field="metric-exposures">6</p>
+              </article>
+            </div>
+          </section>
+
+          <section class="playbook">
+            <h3>Passive recon playbook</h3>
+            <ol>
+              <li>Fetch target and capture response metadata.</li>
+              <li>Grade CSP, HSTS, X-Frame-Options, MIME sniffing controls.</li>
+              <li>Inspect TLS expiry, key strength, signature, and SAN coverage.</li>
+              <li>Probe for high-signal exposures like robots.txt leaks and admin panels.</li>
+              <li>Deliver risk snapshot + exportable report artefact.</li>
+            </ol>
+          </section>
+        </aside>
+
+        <section class="panel panel--main" aria-label="Recon dashboard">
+          <section class="cards cards--grid" aria-label="Recon overview">
+            <article class="insight-card" id="card-risk">
+              <header>
+                <h2>Risk assessment</h2>
+                <span>Aggregated posture from headers, TLS, and exposure findings.</span>
+              </header>
+              <div class="insight-card__body" data-field="risk"></div>
+            </article>
+
+            <article class="insight-card" id="card-tech">
+              <header>
+                <h2>Technology fingerprints</h2>
+                <span>Frameworks and infrastructure inferred from passive signals.</span>
+              </header>
+              <div class="insight-card__body">
+                <ul class="pill-list" data-field="tech"></ul>
+              </div>
+            </article>
+
+            <article class="insight-card" id="card-tls">
+              <header>
+                <h2>TLS intelligence</h2>
+                <span>Live certificate highlights and expiry warnings.</span>
+              </header>
+              <div class="insight-card__body">
+                <dl class="definition" data-field="tls"></dl>
+                <ul class="list list--findings" data-field="tls-findings"></ul>
+              </div>
+            </article>
+
+            <article class="insight-card" id="card-exposure">
+              <header>
+                <h2>Exposure highlights</h2>
+                <span>Passive-only endpoints worth further review.</span>
+              </header>
+              <div class="insight-card__body">
+                <ul class="list" data-field="exposure-highlights"></ul>
+              </div>
+            </article>
+          </section>
+
+          <section class="cards cards--tables" aria-label="Detailed findings">
+            <article class="table-card">
+              <header>
+                <h2>Security headers</h2>
+                <p>Presence and value validation for critical browser directives.</p>
+              </header>
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Header</th>
+                      <th>Status</th>
+                      <th>Value</th>
+                      <th>Note</th>
+                    </tr>
+                  </thead>
+                  <tbody data-field="headers"></tbody>
+                </table>
+              </div>
+            </article>
+
+            <article class="table-card">
+              <header>
+                <h2>Passive exposures</h2>
+                <p>Endpoints discovered without intrusive scanning.</p>
+              </header>
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Path</th>
+                      <th>Status</th>
+                      <th>Risk</th>
+                      <th>Detail</th>
+                    </tr>
+                  </thead>
+                  <tbody data-field="exposures"></tbody>
+                </table>
+              </div>
+            </article>
+
+            <article class="table-card table-card--wide">
+              <header>
+                <h2>Response headers</h2>
+                <p>Raw snapshot of the captured HTTP exchange.</p>
+              </header>
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Header</th>
+                      <th>Value</th>
+                    </tr>
+                  </thead>
+                  <tbody data-field="response"></tbody>
+                </table>
+              </div>
+            </article>
+          </section>
+        </section>
+      </main>
+
+      <section class="assets" id="assets" aria-label="Demo collateral">
+        <div class="assets__intro">
+          <h2>Demo collateral included</h2>
+          <p>
+            Everything you need to showcase VulnVision in minutes: high-impact visuals, evidence files, and one-command demo scripts.
+          </p>
+        </div>
+        <div class="assets__grid">
+          <article class="asset-card">
+            <header>
+              <h3>Sample HTML report</h3>
+              <p><a href="../examples/demo_report.html" target="_blank" rel="noopener">examples/demo_report.html →</a></p>
+            </header>
+            <p>Analyst-ready deliverable that matches the dashboard styling. Perfect for hackathon submissions.</p>
+            <footer>Generated via `/report` endpoint.</footer>
+          </article>
+
+          <article class="asset-card">
+            <header>
+              <h3>Docker demo stack</h3>
+              <p><code>./scripts/demo.sh</code></p>
+            </header>
+            <p>Launches FastAPI backend + static dashboard together—ideal for conference Wi-Fi or new laptops.</p>
+            <footer>Frontend :8080 · Backend :8000 · `docker compose down` to stop.</footer>
+          </article>
+
+          <article class="asset-card">
+            <header>
+              <h3>Live scan checklist</h3>
+              <p>60-second walkthrough</p>
+            </header>
+            <p>Run `uvicorn`, open the dashboard, scan `https://demo.owasp-juice.shop`, narrate risk summary &amp; exposures, export report.</p>
+            <footer>See README Quickstart.</footer>
+          </article>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <p>© <span data-field="year"></span> VulnVision · Passive Recon Intelligence. MIT Licensed.</p>
+      </footer>
+    </div>
 
     <script>
-      const DATA = {
+      const SAMPLE = {
         updated_at: "2025-11-14T09:30:00Z",
-        metrics: {
-          targets: 18,
-          headers: 108,
-          exposures: 6,
-        },
+        metrics: { targets: 18, headers: 108, exposures: 6 },
         risk: {
           level: "Medium",
           reasons: [
@@ -284,11 +287,14 @@
           { name: "Cloudflare", confidence: "Medium", evidence: "server: cloudflare" },
         ],
         tls: {
-          subject: "CN=demo.owasp-juice.shop",
-          issuer: "Cloudflare Inc ECC CA-3",
-          validity: { start: "2025-01-05", end: "2025-04-05", days_remaining: 32 },
-          signature: "ecdsa-with-SHA256",
-          key: { type: "EllipticCurvePublicKey", size: 256 },
+          summary: {
+            Subject: "CN=demo.owasp-juice.shop",
+            Issuer: "Cloudflare Inc ECC CA-3",
+            Validity: "2025-01-05 → 2025-04-05",
+            "Days remaining": 32,
+            Key: "EllipticCurvePublicKey (256 bits)",
+            Signature: "ecdsa-with-SHA256",
+          },
           findings: ["Certificate expires within 45 days"],
         },
         exposures: [
@@ -296,15 +302,15 @@
           { path: "/admin", status: "302", risk: "Medium", detail: "Admin portal accessible" },
           { path: "/.git/", status: "403", risk: "Low", detail: "Path protected but accessible" },
         ],
-        security_headers: [
-          { header: "Content-Security-Policy", status: "missing", value: null, note: "Header not present" },
-          { header: "X-Frame-Options", status: "needs_review", value: "ALLOWALL", note: "Unexpected value `ALLOWALL`" },
-          { header: "X-Content-Type-Options", status: "secure", value: "nosniff", note: "OK" },
-          { header: "Strict-Transport-Security", status: "secure", value: "max-age=31536000; includeSubDomains", note: "OK" },
-          { header: "Referrer-Policy", status: "missing", value: null, note: "Header not present" },
-          { header: "Permissions-Policy", status: "missing", value: null, note: "Header not present" },
+        headers: [
+          { header: "Content-Security-Policy", status: "Missing", value: "—", note: "Header not present" },
+          { header: "X-Frame-Options", status: "Needs review", value: "ALLOWALL", note: "Unexpected value `ALLOWALL`" },
+          { header: "X-Content-Type-Options", status: "Secure", value: "nosniff", note: "OK" },
+          { header: "Strict-Transport-Security", status: "Secure", value: "max-age=31536000; includeSubDomains", note: "OK" },
+          { header: "Referrer-Policy", status: "Missing", value: "—", note: "Header not present" },
+          { header: "Permissions-Policy", status: "Missing", value: "—", note: "Header not present" },
         ],
-        response_headers: {
+        responseHeaders: {
           "content-type": "text/html; charset=utf-8",
           "x-powered-by": "Express",
           server: "cloudflare",
@@ -313,117 +319,142 @@
         },
       };
 
-      function badgeClass(level) {
-        if (!level) return "bg-slate-800 text-slate-300";
-        const key = level.toLowerCase();
-        if (key === "high" || key === "missing") return "btn btn--accent";
-        if (key === "medium" || key === "needs_review") return "badge badge-medium";
-        return "badge badge-low";
+      const bg = document.getElementById("background");
+      const ctx = bg.getContext("2d");
+
+      function resizeBackground() {
+        bg.width = window.innerWidth;
+        bg.height = window.innerHeight;
+        renderBackground();
       }
 
-      function render() {
-        document.getElementById("stat-targets").textContent = DATA.metrics.targets;
-        document.getElementById("stat-headers").textContent = DATA.metrics.headers;
-        document.getElementById("stat-exposures").textContent = DATA.metrics.exposures;
+      function renderBackground() {
+        const gradient = ctx.createRadialGradient(
+          bg.width * 0.75,
+          bg.height * 0.2,
+          bg.width * 0.1,
+          bg.width * 0.5,
+          bg.height * 0.5,
+          bg.width
+        );
+        gradient.addColorStop(0, "rgba(56,189,248,0.22)");
+        gradient.addColorStop(0.4, "rgba(14,165,233,0.12)");
+        gradient.addColorStop(1, "rgba(9,14,37,0.95)");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, bg.width, bg.height);
 
-        document.getElementById("metric-targets").textContent = DATA.metrics.targets;
-        document.getElementById("metric-headers").textContent = DATA.metrics.headers;
-        document.getElementById("metric-exposures").textContent = DATA.metrics.exposures;
+        ctx.strokeStyle = "rgba(148,163,184,0.08)";
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 18; i++) {
+          ctx.beginPath();
+          ctx.arc(
+            Math.random() * bg.width,
+            Math.random() * bg.height,
+            Math.random() * 140 + 40,
+            0,
+            Math.PI * 2
+          );
+          ctx.stroke();
+        }
+      }
 
-        document.getElementById("status-text").textContent = `Scan replayed · ${DATA.updated_at}`;
+      function populate() {
+        document.querySelectorAll("[data-stat=targets]").forEach(el => (el.textContent = SAMPLE.metrics.targets));
+        document.querySelectorAll("[data-stat=headers]").forEach(el => (el.textContent = SAMPLE.metrics.headers));
+        document.querySelectorAll("[data-stat=exposures]").forEach(el => (el.textContent = SAMPLE.metrics.exposures));
 
-        const riskContent = document.getElementById("risk-content");
+        document.querySelector("[data-field=status]").textContent = `Scan replayed · ${SAMPLE.updated_at}`;
+        document.querySelector("[data-field=metric-targets]").textContent = SAMPLE.metrics.targets;
+        document.querySelector("[data-field=metric-headers]").textContent = SAMPLE.metrics.headers;
+        document.querySelector("[data-field=metric-exposures]").textContent = SAMPLE.metrics.exposures;
+        document.querySelector("[data-field=year]").textContent = new Date().getFullYear();
+
+        const riskNode = document.querySelector("[data-field=risk]");
         const badge = document.createElement("span");
-        badge.className = "badge " + (DATA.risk.level === "High" ? "badge-high" : DATA.risk.level === "Medium" ? "badge-medium" : "badge-low");
-        badge.textContent = DATA.risk.level;
-        riskContent.appendChild(badge);
+        badge.className = `pill pill--${SAMPLE.risk.level.toLowerCase()}`;
+        badge.textContent = SAMPLE.risk.level;
         const list = document.createElement("ul");
-        list.style.marginTop = "1rem";
-        list.style.lineHeight = "1.6";
-        DATA.risk.reasons.forEach(reason => {
+        SAMPLE.risk.reasons.forEach(reason => {
           const li = document.createElement("li");
           li.textContent = reason;
           list.appendChild(li);
         });
-        riskContent.appendChild(list);
+        riskNode.appendChild(badge);
+        riskNode.appendChild(list);
 
-        const techList = document.getElementById("tech-list");
-        DATA.tech_stack.forEach(tech => {
+        const techList = document.querySelector("[data-field=tech]");
+        SAMPLE.tech_stack.forEach(tech => {
           const li = document.createElement("li");
-          li.innerHTML = `<strong>${tech.name}</strong> · ${tech.confidence} confidence<br/><small>${tech.evidence}</small>`;
+          li.innerHTML = `<span>${tech.name}</span><small>${tech.confidence} · ${tech.evidence}</small>`;
           techList.appendChild(li);
         });
 
-        const tlsSummary = document.getElementById("tls-summary");
-        const tls = DATA.tls;
-        const items = [
-          `Subject: ${tls.subject}`,
-          `Issuer: ${tls.issuer}`,
-          `Validity: ${tls.validity.start} → ${tls.validity.end}`,
-          `Days remaining: ${tls.validity.days_remaining}`,
-          `Key: ${tls.key.type} (${tls.key.size} bits)`,
-          `Signature: ${tls.signature}`,
-        ];
-        items.forEach(text => {
-          const li = document.createElement("li");
-          li.textContent = text;
-          tlsSummary.appendChild(li);
+        const tlsDl = document.querySelector("[data-field=tls]");
+        Object.entries(SAMPLE.tls.summary).forEach(([label, value]) => {
+          const dt = document.createElement("dt");
+          dt.textContent = label;
+          const dd = document.createElement("dd");
+          dd.textContent = value;
+          tlsDl.appendChild(dt);
+          tlsDl.appendChild(dd);
         });
-        if (tls.findings.length) {
-          const heading = document.createElement("p");
-          heading.style.marginTop = "0.75rem";
-          heading.style.color = "var(--muted)";
-          heading.textContent = "Findings:";
-          tlsSummary.appendChild(heading);
-          tls.findings.forEach(f => {
-            const li = document.createElement("li");
-            li.textContent = f;
-            tlsSummary.appendChild(li);
-          });
-        }
+        const tlsFindings = document.querySelector("[data-field=tls-findings]");
+        SAMPLE.tls.findings.forEach(message => {
+          const li = document.createElement("li");
+          li.textContent = message;
+          tlsFindings.appendChild(li);
+        });
 
-        const exposureHighlights = document.getElementById("exposure-highlights");
-        DATA.exposures.forEach(exposure => {
+        const exposureHighlights = document.querySelector("[data-field=exposure-highlights]");
+        SAMPLE.exposures.forEach(exposure => {
           const li = document.createElement("li");
           li.innerHTML = `<strong>${exposure.path}</strong> · ${exposure.risk} risk<br/><small>${exposure.detail}</small>`;
           exposureHighlights.appendChild(li);
         });
 
-        const headersTable = document.getElementById("headers-table");
-        DATA.security_headers.forEach(header => {
+        const headersTable = document.querySelector("[data-field=headers]");
+        SAMPLE.headers.forEach(header => {
           const tr = document.createElement("tr");
           tr.innerHTML = `
             <td>${header.header}</td>
-            <td><span class="badge ${header.status === "missing" ? "badge-high" : header.status === "needs_review" ? "badge-medium" : "badge-low"}">${header.status.replace(/_/g, " ")}</span></td>
-            <td>${header.value || "—"}</td>
+            <td><span class="pill pill--${header.status.toLowerCase().replace(/\s/g, '-')}">${header.status}</span></td>
+            <td>${header.value}</td>
             <td>${header.note}</td>
           `;
           headersTable.appendChild(tr);
         });
 
-        const exposuresTable = document.getElementById("exposures-table");
-        DATA.exposures.forEach(exposure => {
+        const exposuresTable = document.querySelector("[data-field=exposures]");
+        SAMPLE.exposures.forEach(exposure => {
           const tr = document.createElement("tr");
           tr.innerHTML = `
             <td>${exposure.path}</td>
             <td>${exposure.status}</td>
-            <td><span class="badge ${exposure.risk === "High" ? "badge-high" : exposure.risk === "Medium" ? "badge-medium" : "badge-low"}">${exposure.risk}</span></td>
+            <td><span class="pill pill--${exposure.risk.toLowerCase()}">${exposure.risk}</span></td>
             <td>${exposure.detail}</td>
           `;
           exposuresTable.appendChild(tr);
         });
 
-        const responseTable = document.getElementById("response-table");
-        Object.entries(DATA.response_headers).forEach(([name, value]) => {
+        const responseTable = document.querySelector("[data-field=response]");
+        Object.entries(SAMPLE.responseHeaders).forEach(([header, value]) => {
           const tr = document.createElement("tr");
-          tr.innerHTML = `<td>${name}</td><td><code>${value}</code></td>`;
+          tr.innerHTML = `<td>${header}</td><td><code>${value}</code></td>`;
           responseTable.appendChild(tr);
         });
-
-        document.getElementById("footer-year").textContent = new Date().getFullYear();
       }
 
-      document.addEventListener("DOMContentLoaded", render);
+      document.addEventListener("DOMContentLoaded", () => {
+        resizeBackground();
+        populate();
+        window.addEventListener("resize", resizeBackground);
+        document.querySelector("[data-action=scan]").addEventListener("click", () => {
+          document.querySelector("[data-field=status]").textContent = "Replaying scan…";
+          setTimeout(() => {
+            document.querySelector("[data-field=status]").textContent = `Scan replayed · ${SAMPLE.updated_at}`;
+          }, 700);
+        });
+      });
     </script>
   </body>
 </html>
