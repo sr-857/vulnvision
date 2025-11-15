@@ -14,6 +14,7 @@
   </head>
   <body>
     <canvas id="background" aria-hidden="true"></canvas>
+
     <div class="page" id="app">
       <section class="hero" id="top">
         <div class="hero__content">
@@ -33,15 +34,15 @@
 
           <dl class="hero__metrics" aria-label="Recon performance">
             <div class="hero__metric">
-              <dt data-stat="targets">–</dt>
+              <dt data-stat="targets">18</dt>
               <dd>Targets profiled</dd>
             </div>
             <div class="hero__metric">
-              <dt data-stat="headers">–</dt>
+              <dt data-stat="headers">108</dt>
               <dd>Headers graded</dd>
             </div>
             <div class="hero__metric">
-              <dt data-stat="exposures">–</dt>
+              <dt data-stat="exposures">6</dt>
               <dd>Exposures surfaced</dd>
             </div>
           </dl>
@@ -57,7 +58,7 @@
             </ol>
           </div>
           <div class="card card--accent">
-            <span class="card__label">Built to win hackathons</span>
+            <span class="card__label">Why VulnVision wins hackathons</span>
             <ul>
               <li>Zero intrusive requests—safe for any venue.</li>
               <li>Tell a compelling security story in under a minute.</li>
@@ -116,7 +117,7 @@
             <ol>
               <li>Fetch target and capture response metadata.</li>
               <li>Grade CSP, HSTS, X-Frame-Options, MIME sniffing controls.</li>
-              <li>Inspect TLS expiry, key strength, signature, and SAN coverage.</li>
+              <li>Inspect TLS expiry, key size, signature, and SAN coverage.</li>
               <li>Probe for high-signal exposures like robots.txt leaks and admin panels.</li>
               <li>Deliver risk snapshot + exportable report artefact.</li>
             </ol>
@@ -209,7 +210,7 @@
             <article class="table-card table-card--wide">
               <header>
                 <h2>Response headers</h2>
-                <p>Raw snapshot of the captured HTTP exchange.</p>
+                <p>Raw snapshot captured during the passive scan.</p>
               </header>
               <div class="table-wrapper">
                 <table>
@@ -240,7 +241,7 @@
               <h3>Sample HTML report</h3>
               <p><a href="../examples/demo_report.html" target="_blank" rel="noopener">examples/demo_report.html →</a></p>
             </header>
-            <p>Analyst-ready deliverable that matches the dashboard styling. Perfect for hackathon submissions.</p>
+            <p>Analyst-ready deliverable that matches the dashboard. Perfect for hackathon submissions.</p>
             <footer>Generated via `/report` endpoint.</footer>
           </article>
 
@@ -268,193 +269,4 @@
         <p>© <span data-field="year"></span> VulnVision · Passive Recon Intelligence. MIT Licensed.</p>
       </footer>
     </div>
-
-    <script>
-      const SAMPLE = {
-        updated_at: "2025-11-14T09:30:00Z",
-        metrics: { targets: 18, headers: 108, exposures: 6 },
-        risk: {
-          level: "Medium",
-          reasons: [
-            "Missing security header: Content-Security-Policy",
-            "SSL: Certificate expires within 30 days",
-            "Exposure: robots.txt reveals admin endpoints",
-          ],
-        },
-        tech_stack: [
-          { name: "Angular", confidence: "High", evidence: "script src=/main-es2015.js" },
-          { name: "Express.js", confidence: "Medium", evidence: "x-powered-by: Express" },
-          { name: "Cloudflare", confidence: "Medium", evidence: "server: cloudflare" },
-        ],
-        tls: {
-          summary: {
-            Subject: "CN=demo.owasp-juice.shop",
-            Issuer: "Cloudflare Inc ECC CA-3",
-            Validity: "2025-01-05 → 2025-04-05",
-            "Days remaining": 32,
-            Key: "EllipticCurvePublicKey (256 bits)",
-            Signature: "ecdsa-with-SHA256",
-          },
-          findings: ["Certificate expires within 45 days"],
-        },
-        exposures: [
-          { path: "/robots.txt", status: "200", risk: "Medium", detail: "robots.txt reveals sensitive paths" },
-          { path: "/admin", status: "302", risk: "Medium", detail: "Admin portal accessible" },
-          { path: "/.git/", status: "403", risk: "Low", detail: "Path protected but accessible" },
-        ],
-        headers: [
-          { header: "Content-Security-Policy", status: "Missing", value: "—", note: "Header not present" },
-          { header: "X-Frame-Options", status: "Needs review", value: "ALLOWALL", note: "Unexpected value `ALLOWALL`" },
-          { header: "X-Content-Type-Options", status: "Secure", value: "nosniff", note: "OK" },
-          { header: "Strict-Transport-Security", status: "Secure", value: "max-age=31536000; includeSubDomains", note: "OK" },
-          { header: "Referrer-Policy", status: "Missing", value: "—", note: "Header not present" },
-          { header: "Permissions-Policy", status: "Missing", value: "—", note: "Header not present" },
-        ],
-        responseHeaders: {
-          "content-type": "text/html; charset=utf-8",
-          "x-powered-by": "Express",
-          server: "cloudflare",
-          "cf-ray": "86b3e5c8790104c5",
-          "cache-control": "public, max-age=0, must-revalidate",
-        },
-      };
-
-      const bg = document.getElementById("background");
-      const ctx = bg.getContext("2d");
-
-      function resizeBackground() {
-        bg.width = window.innerWidth;
-        bg.height = window.innerHeight;
-        renderBackground();
-      }
-
-      function renderBackground() {
-        const gradient = ctx.createRadialGradient(
-          bg.width * 0.75,
-          bg.height * 0.2,
-          bg.width * 0.1,
-          bg.width * 0.5,
-          bg.height * 0.5,
-          bg.width
-        );
-        gradient.addColorStop(0, "rgba(56,189,248,0.22)");
-        gradient.addColorStop(0.4, "rgba(14,165,233,0.12)");
-        gradient.addColorStop(1, "rgba(9,14,37,0.95)");
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, bg.width, bg.height);
-
-        ctx.strokeStyle = "rgba(148,163,184,0.08)";
-        ctx.lineWidth = 1;
-        for (let i = 0; i < 18; i++) {
-          ctx.beginPath();
-          ctx.arc(
-            Math.random() * bg.width,
-            Math.random() * bg.height,
-            Math.random() * 140 + 40,
-            0,
-            Math.PI * 2
-          );
-          ctx.stroke();
-        }
-      }
-
-      function populate() {
-        document.querySelectorAll("[data-stat=targets]").forEach(el => (el.textContent = SAMPLE.metrics.targets));
-        document.querySelectorAll("[data-stat=headers]").forEach(el => (el.textContent = SAMPLE.metrics.headers));
-        document.querySelectorAll("[data-stat=exposures]").forEach(el => (el.textContent = SAMPLE.metrics.exposures));
-
-        document.querySelector("[data-field=status]").textContent = `Scan replayed · ${SAMPLE.updated_at}`;
-        document.querySelector("[data-field=metric-targets]").textContent = SAMPLE.metrics.targets;
-        document.querySelector("[data-field=metric-headers]").textContent = SAMPLE.metrics.headers;
-        document.querySelector("[data-field=metric-exposures]").textContent = SAMPLE.metrics.exposures;
-        document.querySelector("[data-field=year]").textContent = new Date().getFullYear();
-
-        const riskNode = document.querySelector("[data-field=risk]");
-        const badge = document.createElement("span");
-        badge.className = `pill pill--${SAMPLE.risk.level.toLowerCase()}`;
-        badge.textContent = SAMPLE.risk.level;
-        const list = document.createElement("ul");
-        SAMPLE.risk.reasons.forEach(reason => {
-          const li = document.createElement("li");
-          li.textContent = reason;
-          list.appendChild(li);
-        });
-        riskNode.appendChild(badge);
-        riskNode.appendChild(list);
-
-        const techList = document.querySelector("[data-field=tech]");
-        SAMPLE.tech_stack.forEach(tech => {
-          const li = document.createElement("li");
-          li.innerHTML = `<span>${tech.name}</span><small>${tech.confidence} · ${tech.evidence}</small>`;
-          techList.appendChild(li);
-        });
-
-        const tlsDl = document.querySelector("[data-field=tls]");
-        Object.entries(SAMPLE.tls.summary).forEach(([label, value]) => {
-          const dt = document.createElement("dt");
-          dt.textContent = label;
-          const dd = document.createElement("dd");
-          dd.textContent = value;
-          tlsDl.appendChild(dt);
-          tlsDl.appendChild(dd);
-        });
-        const tlsFindings = document.querySelector("[data-field=tls-findings]");
-        SAMPLE.tls.findings.forEach(message => {
-          const li = document.createElement("li");
-          li.textContent = message;
-          tlsFindings.appendChild(li);
-        });
-
-        const exposureHighlights = document.querySelector("[data-field=exposure-highlights]");
-        SAMPLE.exposures.forEach(exposure => {
-          const li = document.createElement("li");
-          li.innerHTML = `<strong>${exposure.path}</strong> · ${exposure.risk} risk<br/><small>${exposure.detail}</small>`;
-          exposureHighlights.appendChild(li);
-        });
-
-        const headersTable = document.querySelector("[data-field=headers]");
-        SAMPLE.headers.forEach(header => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${header.header}</td>
-            <td><span class="pill pill--${header.status.toLowerCase().replace(/\s/g, '-')}">${header.status}</span></td>
-            <td>${header.value}</td>
-            <td>${header.note}</td>
-          `;
-          headersTable.appendChild(tr);
-        });
-
-        const exposuresTable = document.querySelector("[data-field=exposures]");
-        SAMPLE.exposures.forEach(exposure => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${exposure.path}</td>
-            <td>${exposure.status}</td>
-            <td><span class="pill pill--${exposure.risk.toLowerCase()}">${exposure.risk}</span></td>
-            <td>${exposure.detail}</td>
-          `;
-          exposuresTable.appendChild(tr);
-        });
-
-        const responseTable = document.querySelector("[data-field=response]");
-        Object.entries(SAMPLE.responseHeaders).forEach(([header, value]) => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `<td>${header}</td><td><code>${value}</code></td>`;
-          responseTable.appendChild(tr);
-        });
-      }
-
-      document.addEventListener("DOMContentLoaded", () => {
-        resizeBackground();
-        populate();
-        window.addEventListener("resize", resizeBackground);
-        document.querySelector("[data-action=scan]").addEventListener("click", () => {
-          document.querySelector("[data-field=status]").textContent = "Replaying scan…";
-          setTimeout(() => {
-            document.querySelector("[data-field=status]").textContent = `Scan replayed · ${SAMPLE.updated_at}`;
-          }, 700);
-        });
-      });
-    </script>
-  </body>
-</html>
+与此同时,
