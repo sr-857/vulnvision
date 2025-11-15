@@ -1,0 +1,20 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: vulnvision-backend
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: vulnvision-frontend
+    environment:
+      - API_BASE=http://localhost:8000
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend

@@ -5,6 +5,10 @@ function dashboard() {
     error: "",
     result: null,
     apiBase: (() => {
+      const override = window.VULNVISION_API_BASE;
+      if (override) {
+        return override.replace(/\/$/, "");
+      }
       const origin = window.location.origin;
       if (origin && origin.startsWith("http")) {
         return origin.replace(/\/$/, "");

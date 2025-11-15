@@ -65,6 +65,18 @@ vulnvision/
    ```
 3. Open `frontend/index.html` in your browser, enter a target URL, and click **Scan**.
 
+## 🛠️ Specialist Demo (Docker)
+
+```bash
+./scripts/demo.sh
+```
+
+- Backend: http://localhost:8000
+- Frontend: http://localhost:8080
+- Stop stack: `docker compose down` (or `docker-compose down`)
+
+For hosted demos, set `API_BASE` when building the frontend container or edit `frontend/config.js` to hardcode your backend URL.
+
 ## 🎬 Demo Assets
 
 - Export a sample HTML report (e.g., OWASP Juice Shop) to `examples/demo_report.html` for offline judging.
