@@ -343,7 +343,7 @@
 
         const tlsDef = document.querySelector("[data-field=tls]");
         Object.entries(DATA.tls)
-          .filter(([key]) => key \!== "findings")
+          .filter(([key]) => key !== "findings")
           .forEach(([label, value]) => {
             const dt = document.createElement("dt");
             dt.textContent = label;
