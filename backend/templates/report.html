@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>VulnVision Report - {{ target }}</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 2rem;
+      color: #1a202c;
+      background: #f7fafc;
+    }
+    h1, h2 {
+      color: #2d3748;
+    }
+    .section {
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      background: #fff;
+      border-radius: 0.5rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      color: #fff;
+    }
+    .severity-low { background: #38a169; }
+    .severity-medium { background: #ed8936; }
+    .severity-high { background: #e53e3e; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    th, td {
+      text-align: left;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 0.5rem;
+    }
+    th {
+      background: #edf2f7;
+    }
+    .muted {
+      color: #718096;
+    }
+  </style>
+</head>
+<body>
+  <h1>VulnVision Scan Report</h1>
+  <p class="muted">Generated at {{ scanned_at }}</p>
+
+  <div class="section">
+    <h2>Target Overview</h2>
+    <p><strong>Target:</strong> {{ target }}</p>
+    <p><strong>Final URL:</strong> {{ fetched_url }}</p>
+    <p><strong>Status Code:</strong> {{ status_code or 'N/A' }}</p>
+    <p><strong>Server IP:</strong> {{ server_ip or 'Unknown' }}</p>
+  </div>
+
+  <div class="section">
+    <h2>Risk Assessment</h2>
+    <span class="badge severity-{{ risk.level | lower }}">{{ risk.level }}</span>
+    <ul>
+      {% for reason in risk.reasons %}
+      <li>{{ reason }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>Technology Stack</h2>
+    {% if tech_stack %}
+    <table>
+      <thead>
+        <tr>
+          <th>Technology</th>
+          <th>Evidence</th>
+          <th>Confidence</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in tech_stack %}
+        <tr>
+          <td>{{ item.name }}</td>
+          <td><code>{{ item.evidence }}</code></td>
+          <td>{{ item.confidence|title }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p>No technologies detected.</p>
+    {% endif %}
+  </div>
+
+  <div class="section">
+    <h2>Security Headers</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Header</th>
+          <th>Status</th>
+          <th>Value</th>
+          <th>Note</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for header in security_headers %}
+        {% set status_class = {
+          'secure': 'severity-low',
+          'needs_review': 'severity-medium',
+          'missing': 'severity-high'
+        }[header.status] if header.status in ['secure', 'needs_review', 'missing'] else 'severity-low' %}
+        <tr>
+          <td>{{ header.header }}</td>
+          <td>
+            <span class="badge {{ status_class }}">{{ header.status|replace('_', ' ')|title }}</span>
+          </td>
+          <td><code>{{ header.value or '—' }}</code></td>
+          <td>{{ header.note }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>SSL/TLS Summary</h2>
+    {% if ssl.present and ssl.summary %}
+    <p><strong>Subject:</strong> {{ ssl.summary.subject }}</p>
+    <p><strong>Issuer:</strong> {{ ssl.summary.issuer }}</p>
+    <p><strong>Valid From:</strong> {{ ssl.summary.not_before }} to {{ ssl.summary.not_after }}</p>
+    <p><strong>Days Remaining:</strong> {{ ssl.summary.days_remaining }}</p>
+    <p><strong>Signature Algorithm:</strong> {{ ssl.summary.signature_algorithm }}</p>
+    <p><strong>Key Type:</strong> {{ ssl.summary.key_type }} ({{ ssl.summary.key_size or 'Unknown' }} bits)</p>
+    <p><strong>Subject Alt Names:</strong> {{ ssl.summary.san | join(', ') if ssl.summary.san else 'None' }}</p>
+    {% else %}
+    <p>No certificate details available.</p>
+    {% endif %}
+
+    {% if ssl.findings %}
+    <h3>Certificate Findings</h3>
+    <ul>
+      {% for finding in ssl.findings %}
+      <li><span class="badge severity-{{ finding.severity }}">{{ finding.severity|title }}</span> {{ finding.message }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+
+  <div class="section">
+    <h2>Exposure Checks</h2>
+    {% if exposures %}
+    <table>
+      <thead>
+        <tr>
+          <th>Path</th>
+          <th>Status</th>
+          <th>Risk</th>
+          <th>Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for exposure in exposures %}
+        <tr>
+          <td>{{ exposure.path }}</td>
+          <td>{{ exposure.status }}</td>
+          <td><span class="badge severity-{{ exposure.risk }}">{{ exposure.risk|title }}</span></td>
+          <td>{{ exposure.detail }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p>No exposures detected.</p>
+    {% endif %}
+  </div>
+
+  <div class="section">
+    <h2>Response Headers</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Header</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for name, value in response_headers.items() %}
+        <tr>
+          <td>{{ name }}</td>
+          <td><code>{{ value }}</code></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>

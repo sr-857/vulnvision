@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en" x-data="dashboard()" class="h-full bg-slate-950">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VulnVision – Passive Recon Dashboard</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" integrity="sha384-cfB3fNeY+NNoF9VWgDXMKkjIElYw31wMGkDJ9E5Qf4fG8BTaUChlQhbTTvXvb/4M" crossorigin="anonymous">
+  <link rel="stylesheet" href="styles.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
+  <script defer src="dashboard.js"></script>
+</head>
+<body class="min-h-full bg-slate-950 text-slate-100">
+  <div class="mx-auto max-w-6xl px-4 py-10">
+    <header class="mb-10 text-center">
+      <h1 class="text-4xl font-bold text-emerald-400">VulnVision</h1>
+      <p class="mt-3 text-lg text-slate-300">
+        Passive recon & misconfiguration analysis for fast triage.
+      </p>
+    </header>
+
+    <section class="mb-8 rounded-2xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-emerald-500/10">
+      <form class="grid gap-4 md:grid-cols-[1fr_auto_auto]" x-on:submit.prevent="runScan">
+        <label class="flex flex-col md:col-span-1">
+          <span class="text-sm font-semibold uppercase tracking-wide text-slate-400">Target URL</span>
+          <input
+            type="url"
+            required
+            placeholder="https://example.com"
+            x-model="target"
+            class="mt-2 rounded-xl border border-slate-700 bg-slate-950/60 px-4 py-3 text-base text-slate-100 shadow-inner focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          />
+        </label>
+        <button
+          type="submit"
+          class="h-12 self-end rounded-xl bg-emerald-500 px-6 font-semibold text-slate-950 transition hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+          :disabled="loading"
+        >
+          <span x-show="!loading">Run Scan</span>
+          <span x-show="loading" class="flex items-center justify-center gap-2">
+            <svg class="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle class="opacity-25" cx="12" cy="12" r="10"></circle>
+              <path class="opacity-75" d="M4 12a8 8 0 018-8"></path>
+            </svg>
+            Scanning…
+          </span>
+        </button>
+        <button
+          type="button"
+          class="h-12 self-end rounded-xl bg-slate-800 px-6 font-semibold text-slate-100 transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400"
+          x-on:click="downloadReport"
+          :disabled="!target || loading"
+        >
+          Export HTML Report
+        </button>
+      </form>
+
+      <p x-show="error" class="mt-4 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200" x-text="error"></p>
+    </section>
+
+    <template x-if="result">
+      <div class="space-y-6">
+        <section class="card">
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h2 class="text-2xl font-semibold text-emerald-300">Risk Snapshot</h2>
+              <p class="text-sm text-slate-400">Overall posture based on headers, SSL, and exposure checks.</p>
+            </div>
+            <span class="badge text-base" :class="badgeClass(result.risk.level)">
+              <svg class="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 9v4m0 4h.01" />
+                <path d="M10.29 3.86L2.82 18a1 1 0 00.86 1.5h16.64a1 1 0 00.86-1.5L13.71 3.86a1 1 0 00-1.72 0z" />
+              </svg>
+              <span x-text="result.risk.level"></span>
+            </span>
+          </div>
+          <ul class="mt-4 list-disc space-y-2 pl-5 text-sm text-slate-200">
+            <template x-for="reason in result.risk.reasons" :key="reason">
+              <li x-text="reason"></li>
+            </template>
+          </ul>
+        </section>
+
+        <section class="card">
+          <h2 class="section-title">Target Overview</h2>
+          <dl class="grid gap-4 md:grid-cols-2">
+            <div>
+              <dt class="dt">Target</dt>
+              <dd class="dd" x-text="result.target"></dd>
+            </div>
+            <div>
+              <dt class="dt">Resolved URL</dt>
+              <dd class="dd" x-text="result.fetched_url"></dd>
+            </div>
+            <div>
+              <dt class="dt">Status Code</dt>
+              <dd class="dd" x-text="result.status_code ?? 'N/A'"></dd>
+            </div>
+            <div>
+              <dt class="dt">Server IP</dt>
+              <dd class="dd" x-text="result.server_ip ?? 'Unknown'"></dd>
+            </div>
+            <div class="md:col-span-2">
+              <dt class="dt">Scanned At</dt>
+              <dd class="dd" x-text="formatDate(result.scanned_at)"></dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="card">
+          <div class="section-heading">
+            <h2 class="section-title">Technology Detection</h2>
+            <p class="section-subtitle">Frameworks, platforms, and libraries inferred from passive fingerprints.</p>
+          </div>
+          <template x-if="result.tech_stack.length">
+            <div class="overflow-x-auto">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Technology</th>
+                    <th>Evidence</th>
+                    <th>Confidence</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template x-for="item in result.tech_stack" :key="item.name">
+                    <tr>
+                      <td x-text="item.name"></td>
+                      <td><code x-text="item.evidence"></code></td>
+                      <td x-text="capitalize(item.confidence)"></td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </template>
+          <p x-show="!result.tech_stack.length" class="empty-state">No technologies detected.</p>
+        </section>
+
+        <section class="card">
+          <div class="section-heading">
+            <h2 class="section-title">Security Headers</h2>
+            <p class="section-subtitle">Presence and quality of critical browser-facing defense controls.</p>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Header</th>
+                  <th>Status</th>
+                  <th>Value</th>
+                  <th>Note</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-for="header in result.security_headers" :key="header.header">
+                  <tr>
+                    <td x-text="header.header"></td>
+                    <td>
+                      <span class="badge" :class="headerBadge(header.status)" x-text="formatHeaderStatus(header.status)"></span>
+                    </td>
+                    <td><code x-text="header.value ?? '—'"></code></td>
+                    <td x-text="header.note"></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="section-heading">
+            <h2 class="section-title">SSL / TLS</h2>
+            <p class="section-subtitle">Certificate attributes and findings for HTTPS targets.</p>
+          </div>
+          <template x-if="result.ssl.present && result.ssl.summary">
+            <dl class="grid gap-4 md:grid-cols-2">
+              <div>
+                <dt class="dt">Subject</dt>
+                <dd class="dd" x-text="result.ssl.summary.subject"></dd>
+              </div>
+              <div>
+                <dt class="dt">Issuer</dt>
+                <dd class="dd" x-text="result.ssl.summary.issuer"></dd>
+              </div>
+              <div>
+                <dt class="dt">Validity</dt>
+                <dd class="dd">
+                  <span x-text="formatDate(result.ssl.summary.not_before)"></span>
+                  <span class="text-slate-500">→</span>
+                  <span x-text="formatDate(result.ssl.summary.not_after)"></span>
+                </dd>
+              </div>
+              <div>
+                <dt class="dt">Days Remaining</dt>
+                <dd class="dd" x-text="result.ssl.summary.days_remaining"></dd>
+              </div>
+              <div>
+                <dt class="dt">Key</dt>
+                <dd class="dd" x-text="formatKey(result.ssl.summary)"></dd>
+              </div>
+              <div>
+                <dt class="dt">Signature Algorithm</dt>
+                <dd class="dd" x-text="result.ssl.summary.signature_algorithm"></dd>
+              </div>
+              <div class="md:col-span-2">
+                <dt class="dt">Subject Alt Names</dt>
+                <dd class="dd" x-text="result.ssl.summary.san.length ? result.ssl.summary.san.join(', ') : 'None'"></dd>
+              </div>
+            </dl>
+          </template>
+          <p x-show="!(result.ssl.present && result.ssl.summary)" class="empty-state">No certificate details available.</p>
+
+          <div x-show="result.ssl.findings?.length" class="mt-4">
+            <h3 class="text-lg font-semibold text-emerald-200">Certificate Findings</h3>
+            <ul class="mt-2 space-y-2 text-sm text-slate-200">
+              <template x-for="(finding, index) in result.ssl.findings" :key="index">
+                <li class="flex items-center gap-3">
+                  <span class="badge" :class="badgeClass(finding.severity)" x-text="capitalize(finding.severity)"></span>
+                  <span x-text="finding.message"></span>
+                </li>
+              </template>
+            </ul>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="section-heading">
+            <h2 class="section-title">Exposure Checks</h2>
+            <p class="section-subtitle">Responses from common misconfiguration endpoints.</p>
+          </div>
+          <template x-if="result.exposures.length">
+            <div class="overflow-x-auto">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Path</th>
+                    <th>Status</th>
+                    <th>Risk</th>
+                    <th>Detail</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template x-for="(exposure, idx) in result.exposures" :key="idx">
+                    <tr>
+                      <td x-text="exposure.path"></td>
+                      <td x-text="exposure.status"></td>
+                      <td>
+                        <span class="badge" :class="badgeClass(exposure.risk)" x-text="capitalize(exposure.risk)"></span>
+                      </td>
+                      <td x-text="exposure.detail"></td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </template>
+          <p x-show="!result.exposures.length" class="empty-state">No exposures detected.</p>
+        </section>
+
+        <section class="card">
+          <div class="section-heading">
+            <h2 class="section-title">Response Headers</h2>
+            <p class="section-subtitle">Raw headers returned by the target.</p>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Header</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-for="(value, name) in result.response_headers" :key="name">
+                  <tr>
+                    <td x-text="name"></td>
+                    <td><code x-text="value"></code></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </template>
+
+    <section x-show="!result && !loading" class="mt-20 text-center text-slate-500">
+      <svg class="mx-auto h-16 w-16 text-slate-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M12 3v3m6.364.636l-2.121 2.121M21 12h-3m-.636 6.364l-2.121-2.121M12 21v-3m-6.364.636l2.121-2.121M3 12h3m.636-6.364l2.121 2.121" />
+        <circle cx="12" cy="12" r="3" />
+      </svg>
+      <p class="mt-4 text-lg">Run a scan to see technology fingerprints, SSL posture, and exposure insights.</p>
+    </section>
+  </div>
+</body>
+</html>
