@@ -127,25 +127,49 @@
     </table>
   </div>
 
+  {% set tls_summary = tls if tls.present else None %}
+  {% set ssl_summary = ssl.summary if ssl.summary else None %}
   <div class="section">
     <h2>SSL/TLS Summary</h2>
-    {% if ssl.present and ssl.summary %}
-    <p><strong>Subject:</strong> {{ ssl.summary.subject }}</p>
-    <p><strong>Issuer:</strong> {{ ssl.summary.issuer }}</p>
-    <p><strong>Valid From:</strong> {{ ssl.summary.not_before }} to {{ ssl.summary.not_after }}</p>
-    <p><strong>Days Remaining:</strong> {{ ssl.summary.days_remaining }}</p>
-    <p><strong>Signature Algorithm:</strong> {{ ssl.summary.signature_algorithm }}</p>
-    <p><strong>Key Type:</strong> {{ ssl.summary.key_type }} ({{ ssl.summary.key_size or 'Unknown' }} bits)</p>
-    <p><strong>Subject Alt Names:</strong> {{ ssl.summary.san | join(', ') if ssl.summary.san else 'None' }}</p>
+    {% if tls_summary or ssl_summary %}
+    <p><strong>Subject:</strong> {{ (tls_summary.subject if tls_summary else ssl_summary.subject) or '—' }}</p>
+    <p><strong>Issuer:</strong> {{ (tls_summary.issuer if tls_summary else ssl_summary.issuer) or '—' }}</p>
+    <p><strong>Valid From:</strong>
+      {{ (tls_summary.valid_from if tls_summary else ssl_summary.not_before) or '—' }}
+      to
+      {{ (tls_summary.valid_to if tls_summary else ssl_summary.not_after) or '—' }}
+    </p>
+    <p><strong>Days Remaining:</strong> {{ (tls_summary.days_remaining if tls_summary else ssl_summary.days_remaining) or '—' }}</p>
+    <p><strong>Signature Algorithm:</strong> {{ (tls_summary.signature if tls_summary else ssl_summary.signature_algorithm) or '—' }}</p>
+    <p><strong>Key Type:</strong>
+      {% if tls_summary and tls_summary.key_type %}
+        {{ tls_summary.key_type }}{% if tls_summary.key_size %} ({{ tls_summary.key_size }} bits){% endif %}
+      {% elif ssl_summary and ssl_summary.key_type %}
+        {{ ssl_summary.key_type }}{% if ssl_summary.key_size %} ({{ ssl_summary.key_size }} bits){% endif %}
+      {% else %}
+        Unknown
+      {% endif %}
+    </p>
+    <p><strong>Subject Alt Names:</strong>
+      {% set san_list = tls_summary.san if tls_summary and tls_summary.san else (ssl_summary.san if ssl_summary and ssl_summary.san else []) %}
+      {{ san_list | join(', ') if san_list else 'None' }}
+    </p>
     {% else %}
     <p>No certificate details available.</p>
     {% endif %}
 
-    {% if ssl.findings %}
+    {% set tls_findings = tls.findings if tls_summary and tls.findings else [] %}
+    {% set ssl_findings = ssl.findings if ssl.findings else [] %}
+    {% if tls_findings or ssl_findings %}
     <h3>Certificate Findings</h3>
     <ul>
-      {% for finding in ssl.findings %}
+      {% for finding in ssl_findings %}
       <li><span class="badge severity-{{ finding.severity }}">{{ finding.severity|title }}</span> {{ finding.message }}</li>
+      {% endfor %}
+      {% for message in tls_findings %}
+      {% if message %}
+      <li><span class="badge severity-medium">Notice</span> {{ message }}</li>
+      {% endif %}
       {% endfor %}
     </ul>
     {% endif %}
