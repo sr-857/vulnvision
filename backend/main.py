@@ -40,20 +40,6 @@ class ScanRequest(BaseModel):
         return value
 
 
-class ScanResult(BaseModel):
-    target: str
-    fetched_url: str
-    status_code: int | None
-    response_headers: Dict[str, str]
-    server_ip: str | None
-    tech_stack: List[Dict[str, str]]
-    security_headers: List[Dict[str, str | None]]
-    ssl: Dict[str, Any]
-    exposures: List[Dict[str, str]]
-    risk: Dict[str, Any]
-    scanned_at: str
-
-
 def resolve_ip(hostname: str) -> str | None:
     try:
         ip = requests.get(f"https://dns.google/resolve?name={hostname}&type=A", timeout=5)
@@ -133,7 +119,7 @@ def compute_risk(
     return {"level": level.title(), "reasons": reasons}
 
 
-def normalize_headers(headers: Any) -> Dict[str, str]:
+def flatten_headers(headers: Any) -> Dict[str, str]:
     normalized: Dict[str, str] = {}
     for key, value in headers.items():
         if isinstance(value, list):
@@ -143,7 +129,123 @@ def normalize_headers(headers: Any) -> Dict[str, str]:
     return normalized
 
 
-def perform_scan(target_url: str) -> ScanResult:
+def normalize_tech_stack(findings: List[Dict[str, str]]) -> List[Dict[str, str]]:
+    normalized: List[Dict[str, str]] = []
+    for entry in findings:
+        normalized.append(
+            {
+                "name": entry.get("name", "Unknown"),
+                "confidence": entry.get("confidence", "Unknown"),
+                "evidence": entry.get("evidence", ""),
+            }
+        )
+    return normalized
+
+
+def format_security_headers(headers_result: List[Dict[str, str | None]]) -> List[Dict[str, str]]:
+    formatted: List[Dict[str, str]] = []
+    for header in headers_result:
+        status = (header.get("status") or "").lower()
+        formatted.append(
+            {
+                "header": header.get("header", ""),
+                "status": status,
+                "value": header.get("value") or "",
+                "note": header.get("note") or "",
+            }
+        )
+    return formatted
+
+
+def normalize_tls(ssl_result: Dict[str, Any]) -> tuple[Dict[str, Any], Dict[str, Any]]:
+    present = ssl_result.get("present")
+    summary = ssl_result.get("summary") or {}
+    findings = ssl_result.get("findings") or []
+    normalized_summary: Dict[str, Any] | None = None
+    if present and summary:
+        normalized_summary = {
+            "subject": summary.get("subject", ""),
+            "issuer": summary.get("issuer", ""),
+            "not_before": summary.get("not_before"),
+            "not_after": summary.get("not_after"),
+            "days_remaining": summary.get("days_remaining"),
+            "signature_algorithm": summary.get("signature_algorithm"),
+            "key_type": summary.get("key_type"),
+            "key_size": summary.get("key_size"),
+            "san": summary.get("san", []),
+        }
+
+    normalized_findings = [
+        {
+            "message": finding.get("message", ""),
+            "severity": (finding.get("severity") or "unknown").lower(),
+        }
+        for finding in findings
+    ]
+
+    # Legacy findings may appear in the root tls dict; include them.
+    root_findings = ssl_result.get("findings") or []
+    if isinstance(root_findings, list):
+        normalized_findings.extend(
+            {
+                "message": item.get("message", ""),
+                "severity": (item.get("severity") or "unknown").lower(),
+            }
+            for item in root_findings
+        )
+
+    # Deduplicate findings
+    seen: set[tuple[str, str]] = set()
+    unique_findings: List[Dict[str, str]] = []
+    for item in normalized_findings:
+        key = (item["message"], item["severity"])
+        if key in seen:
+            continue
+        seen.add(key)
+        unique_findings.append(item)
+
+    tls_payload = {
+        "present": bool(present and normalized_summary),
+        "subject": (normalized_summary or {}).get("subject", ""),
+        "issuer": (normalized_summary or {}).get("issuer", ""),
+        "valid_from": (normalized_summary or {}).get("not_before"),
+        "valid_to": (normalized_summary or {}).get("not_after"),
+        "days_remaining": (normalized_summary or {}).get("days_remaining"),
+        "key_type": (normalized_summary or {}).get("key_type"),
+        "key_size": (normalized_summary or {}).get("key_size"),
+        "signature": (normalized_summary or {}).get("signature_algorithm"),
+        "san": (normalized_summary or {}).get("san", []),
+        "findings": [item["message"] for item in unique_findings if item["message"]],
+    }
+
+    ssl_payload = {
+        "present": bool(present and normalized_summary),
+        "summary": normalized_summary,
+        "findings": unique_findings,
+    }
+
+    return tls_payload, ssl_payload
+
+
+def normalize_exposures(findings: List[Dict[str, str]]) -> List[Dict[str, str]]:
+    normalized: List[Dict[str, str]] = []
+    for finding in findings:
+        normalized.append(
+            {
+                "path": finding.get("path", ""),
+                "status": finding.get("status", ""),
+                "risk": (finding.get("risk") or "").lower(),
+                "detail": finding.get("detail", ""),
+            }
+        )
+    return normalized
+
+
+def normalize_response_headers(headers: Dict[str, str]) -> Dict[str, str]:
+    return {k.lower(): v for k, v in headers.items()}
+
+
+def perform_scan(target_url: str) -> Dict[str, Any]:
     parsed = urlparse(target_url)
     hostname = parsed.hostname
     if not hostname:
@@ -155,7 +257,7 @@ def perform_scan(target_url: str) -> ScanResult:
     body: str | None = None
 
     if response is not None:
-        response_headers = normalize_headers(response.headers)
+        response_headers = flatten_headers(response.headers)
         status_code = response.status_code
         body = response.text if response.headers.get("content-type", "").startswith("text") else None
 
@@ -175,29 +277,42 @@ def perform_scan(target_url: str) -> ScanResult:
 
     server_ip = resolve_ip(hostname)
 
-    return ScanResult(
-        target=target_url,
-        fetched_url=final_url,
-        status_code=status_code,
-        response_headers=response_headers,
-        server_ip=server_ip,
-        tech_stack=tech_stack,
-        security_headers=security_headers,
-        ssl=ssl_info,
-        exposures=exposures,
-        risk=risk,
-        scanned_at=datetime.now(timezone.utc).isoformat(),
-    )
+    tls_payload, ssl_payload = normalize_tls(ssl_info)
+
+    formatted_headers = format_security_headers(security_headers)
+    tech_payload = normalize_tech_stack(tech_stack)
+
+    normalized_response = {
+        "target": target_url,
+        "fetched_url": final_url,
+        "status_code": status_code,
+        "response_headers": normalize_response_headers(response_headers),
+        "raw_headers": response_headers,
+        "server_ip": server_ip,
+        "tech_stack": tech_payload,
+        "technology": tech_payload,
+        "security_headers": formatted_headers,
+        "headers": formatted_headers,
+        "tls": tls_payload,
+        "ssl": ssl_payload,
+        "exposures": normalize_exposures(exposures),
+        "risk": {
+            "level": risk.get("level", "Unknown"),
+            "reasons": risk.get("reasons", []),
+        },
+        "scanned_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+    return normalized_response
 
 
-@app.post("/scan", response_model=ScanResult)
-def scan(request: ScanRequest) -> ScanResult:
+@app.post("/scan")
+def scan(request: ScanRequest) -> Dict[str, Any]:
     return perform_scan(request.target)
 
 
 @app.post("/report", response_class=HTMLResponse)
 def report(request: ScanRequest) -> HTMLResponse:
     result = perform_scan(request.target)
-    context = result.dict()
-    html = render_report(context)
+    html = render_report(result)
     return HTMLResponse(content=html, media_type="text/html")
