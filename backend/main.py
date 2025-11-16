@@ -1,4 +1,7 @@
 import asyncio
+import time
+from collections import deque
+from copy import deepcopy
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
@@ -19,6 +22,17 @@ IMPORTANT_HEADERS: List[str] = [
     "Referrer-Policy",
     "Permissions-Policy",
 ]
+
+CACHE_TTL_SECONDS = 120
+RATE_LIMIT_WINDOW_SECONDS = 60
+RATE_LIMIT_MAX_REQUESTS = 30
+
+SCAN_CACHE: Dict[str, tuple[float, Dict[str, Any]]] = {}
+CACHE_LOCK = asyncio.Lock()
+
+REQUEST_TIMESTAMPS: deque[float] = deque()
+RATE_LIMIT_LOCK = asyncio.Lock()
+
 
 app = FastAPI(title=APP_TITLE)
 app.add_middleware(
@@ -56,23 +70,96 @@ def dedupe(sequence: List[str]) -> List[str]:
     return ordered
 
 
+HIGH_RISK_PATHS = {
+    "/.git/",
+    "/.git/config",
+    "/.svn/",
+    "/.hg/",
+    "/.env",
+    "/.aws/credentials",
+    "/.ssh/id_rsa",
+    "/.bash_history",
+    "/backup.zip",
+    "/db.sql",
+    "/database.sql",
+    "/config.php",
+    "/web.config",
+}
+
+MEDIUM_RISK_PATHS = {
+    "/phpinfo.php",
+    "/server-status",
+    "/server-info",
+    "/admin",
+    "/admin/login",
+    "/wp-admin",
+    "/wp-login.php",
+    "/api/docs",
+    "/swagger-ui.html",
+    "/grafana/login",
+    "/kibana",
+    "/metrics",
+    "/actuator",
+    "/debug",
+    "/uploads/",
+    "/storage/",
+    "/vendor/",
+    "/node_modules/",
+    "/robots.txt",
+}
+
+
 def classify_exposure(entry: Dict[str, Any]) -> str:
     path = entry.get("path", "")
     status = entry.get("status")
-    high_paths = {"/.git/", "/.env", "/backup.zip", "/config.php"}
-    if status in (200, 301, 302) and path in high_paths:
+
+    if path in HIGH_RISK_PATHS and status in (200, 301, 302):
         return "high"
-    if path == "/robots.txt" and status == 200:
+    if path in MEDIUM_RISK_PATHS and status in (200, 301, 302):
         return "medium"
     if status in (401, 403):
         return "low"
-    if status == 200 and path == "/admin":
+    if status == 200 and path.startswith("/admin"):
         return "medium"
     return "low"
 
 
+async def enforce_rate_limit() -> None:
+    async with RATE_LIMIT_LOCK:
+        now = time.time()
+        while REQUEST_TIMESTAMPS and now - REQUEST_TIMESTAMPS[0] > RATE_LIMIT_WINDOW_SECONDS:
+            REQUEST_TIMESTAMPS.popleft()
+        if len(REQUEST_TIMESTAMPS) >= RATE_LIMIT_MAX_REQUESTS:
+            retry_after = max(1, int(RATE_LIMIT_WINDOW_SECONDS - (now - REQUEST_TIMESTAMPS[0])))
+            raise HTTPException(status_code=429, detail=f"Rate limit exceeded. Retry after {retry_after} seconds.")
+        REQUEST_TIMESTAMPS.append(now)
+
+
+async def get_cached_scan(normalized_target: str) -> Dict[str, Any] | None:
+    async with CACHE_LOCK:
+        cached = SCAN_CACHE.get(normalized_target)
+        if not cached:
+            return None
+        cached_at, payload = cached
+        if time.time() - cached_at > CACHE_TTL_SECONDS:
+            del SCAN_CACHE[normalized_target]
+            return None
+        return deepcopy(payload)
+
+
+async def set_cached_scan(normalized_target: str, payload: Dict[str, Any]) -> None:
+    async with CACHE_LOCK:
+        SCAN_CACHE[normalized_target] = (time.time(), deepcopy(payload))
+
+
 async def perform_scan(raw_target: str) -> Dict[str, Any]:
+    await enforce_rate_limit()
     url = normalize_target(raw_target)
+
+    cached = await get_cached_scan(url)
+    if cached is not None:
+        cached["target"] = raw_target
+        return cached
 
     try:
         headers_res, ssl_res, tech_res, exposure_res = await asyncio.gather(
@@ -230,7 +317,8 @@ async def perform_scan(raw_target: str) -> Dict[str, Any]:
         "scanned_at": datetime.now(timezone.utc).isoformat(),
     }
 
-    return response_payload
+    await set_cached_scan(url, response_payload)
+    return deepcopy(response_payload)
 
 
 @app.post("/scan")

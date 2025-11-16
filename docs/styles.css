@@ -317,6 +317,10 @@ body {
   transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
 }
 
+.card--shadow {
+  box-shadow: 0 32px 68px rgba(4, 12, 44, 0.6);
+}
+
 .card:hover {
   transform: translateY(-8px);
   box-shadow: 0 34px 68px rgba(4, 10, 32, 0.65);

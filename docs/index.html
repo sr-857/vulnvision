@@ -5,7 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VulnVision · Passive Recon Control Center</title>
     <link rel="stylesheet" href="styles.css" />
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.5/dist/chart.umd.min.js"></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/chart.js@4.4.5/dist/chart.umd.min.js"
+      integrity="sha384-MY7MzGt1eo8yEmzMhq5OA4nmpW53GMFFJkybLBGnp9KKnz4YKarSqrHpEe+Th9qH"
+      crossorigin="anonymous"
+    ></script>
     <script>
       window.VULNVISION_API_BASE = "https://vulnvision.onrender.com";
     </script>
@@ -128,7 +132,7 @@
               </div>
             </article>
 
-            <article class="card card--tls" id="card-tls">
+            <article class="card card--tls card--glow card--shadow" id="card-tls">
               <header class="card__header">
                 <h3>TLS Certificate</h3>
                 <span class="card__status" data-field="tls-status">Expires soon</span>

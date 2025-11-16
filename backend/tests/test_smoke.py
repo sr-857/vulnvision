@@ -1,8 +1,6 @@
-def test_imports():
-    import backend.main  # noqa: F401
-    from backend.scanners import exposure, headers, sslscan, techdetect  # noqa: F401
+from importlib import import_module
 
-    assert exposure is not None
-    assert headers is not None
-    assert sslscan is not None
-    assert techdetect is not None
+
+def test_fastapi_app_imports():
+    app_module = import_module("main")
+    assert hasattr(app_module, "app"), "FastAPI application not found"

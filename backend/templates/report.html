@@ -5,166 +5,330 @@
     <title>VulnVision Report — {{ data.target }}</title>
     <style>
       :root {
-        --bg-dark: #061325;
-        --card-bg: #0c1f3a;
-        --card-border: #13315c;
-        --text-primary: #e6eef6;
-        --accent-low: #2ecc71;
-        --accent-medium: #f1c40f;
-        --accent-high: #e74c3c;
+        color-scheme: dark;
+        --bg: #020712;
+        --bg-panel: rgba(6, 14, 32, 0.9);
+        --bg-card: rgba(10, 22, 48, 0.95);
+        --border: rgba(64, 120, 255, 0.25);
+        --accent: #29ffd4;
+        --accent-strong: #12c8ff;
+        --text: #eef4ff;
+        --muted: #9fb3ff;
+        --low: #2ecc71;
+        --medium: #f1c40f;
+        --high: #e74c3c;
       }
-      * { box-sizing: border-box; }
+
+      * {
+        box-sizing: border-box;
+      }
+
       body {
-        font-family: Arial, Helvetica, sans-serif;
-        background: var(--bg-dark);
-        color: var(--text-primary);
-        margin: 24px;
+        margin: 0;
+        padding: 40px 28px;
+        background: radial-gradient(circle at 80% 10%, rgba(18, 200, 255, 0.18), transparent 45%),
+          radial-gradient(circle at 10% 90%, rgba(41, 255, 212, 0.14), transparent 55%), var(--bg);
+        color: var(--text);
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       }
-      h1 { margin-bottom: 16px; }
-      h2 { margin: 0 0 12px; }
-      .card {
-        background: var(--card-bg);
-        border: 1px solid var(--card-border);
-        border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 18px 32px rgba(0, 0, 0, 0.35);
+
+      h1 {
+        margin: 0 0 24px;
+        font-size: 2.2rem;
+        letter-spacing: -0.02em;
       }
-      .badge {
-        display: inline-block;
-        padding: 4px 12px;
-        border-radius: 999px;
+
+      h2 {
+        margin: 0 0 12px;
+        font-size: 1.2rem;
         font-weight: 600;
-        font-size: 0.85rem;
       }
-      .badge.low { background: var(--accent-low); }
-      .badge.medium { background: var(--accent-medium); color: #000; }
-      .badge.high { background: var(--accent-high); }
+
+      .grid {
+        display: grid;
+        gap: 24px;
+      }
+
+      .card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 22px 24px;
+        box-shadow: 0 28px 58px rgba(6, 10, 36, 0.6);
+      }
+
+      .card__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(82, 112, 220, 0.2);
+        margin-bottom: 16px;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 12px;
+        font-size: 0.78rem;
+        border-radius: 999px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        border: 1px solid currentColor;
+      }
+
+      .badge.low {
+        background: rgba(46, 204, 113, 0.18);
+        color: var(--low);
+      }
+
+      .badge.medium {
+        background: rgba(241, 196, 15, 0.22);
+        color: var(--medium);
+      }
+
+      .badge.high {
+        background: rgba(231, 76, 60, 0.22);
+        color: var(--high);
+      }
+
       table {
         width: 100%;
         border-collapse: collapse;
+        font-size: 0.94rem;
+      }
+
+      thead tr {
+        background: rgba(18, 200, 255, 0.08);
+      }
+
+      th,
+      td {
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(82, 112, 220, 0.18);
+        vertical-align: top;
+        text-align: left;
+      }
+
+      th {
+        font-weight: 600;
+        color: var(--muted);
+        font-size: 0.75rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      ul {
+        margin: 0;
+        padding-left: 18px;
+        display: grid;
+        gap: 8px;
+      }
+
+      li {
+        line-height: 1.5;
+      }
+
+      dl {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+        margin: 0;
+      }
+
+      dt {
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        color: var(--muted);
+        letter-spacing: 0.08em;
+      }
+
+      dd {
+        margin: 4px 0 0;
         font-size: 0.95rem;
       }
-      thead tr { background: rgba(255, 255, 255, 0.08); }
-      th, td {
-        padding: 10px 12px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        text-align: left;
-        vertical-align: top;
-      }
-      ul { margin: 0; padding-left: 20px; }
+
       pre {
+        margin: 0;
         background: rgba(0, 0, 0, 0.4);
-        border-radius: 10px;
-        padding: 14px;
+        border-radius: 14px;
+        padding: 16px;
         overflow-x: auto;
         font-size: 0.85rem;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      .group {
+        display: grid;
+        gap: 24px;
+      }
+
+      @media (max-width: 800px) {
+        body {
+          padding: 28px 18px;
+        }
+        dl {
+          grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        }
       }
     </style>
   </head>
   <body>
     <h1>VulnVision — Report for {{ data.target }}</h1>
 
-    <div class="card">
-      <h2>Risk Overview <span class="badge {{ data.risk.level|lower }}">{{ data.risk.level|title }}</span></h2>
-      <ul>
-        {% for reason in data.risk.reasons %}
-        <li>{{ reason }}</li>
-        {% else %}
-        <li>No significant issues detected.</li>
-        {% endfor %}
-      </ul>
-    </div>
-
-    <div class="card">
-      <h2>Technology Stack</h2>
-      <table>
-        <thead>
-          <tr><th>Name</th><th>Confidence</th><th>Evidence</th></tr>
-        </thead>
-        <tbody>
-          {% for tech in data.technology %}
-          <tr>
-            <td>{{ tech.name }}</td>
-            <td>{{ tech.confidence }}</td>
-            <td>{{ tech.evidence or "—" }}</td>
-          </tr>
+    <section class="grid">
+      <article class="card">
+        <header class="card__header">
+          <h2>Risk Overview</h2>
+          <span class="badge {{ data.risk.level|lower }}">{{ data.risk.level|title }}</span>
+        </header>
+        <ul>
+          {% for reason in data.risk.reasons %}
+          <li>{{ reason }}</li>
           {% else %}
-          <tr><td colspan="3">No technologies detected.</td></tr>
+          <li>No significant issues detected.</li>
           {% endfor %}
-        </tbody>
-      </table>
-    </div>
+        </ul>
+      </article>
 
-    <div class="card">
-      <h2>Security Headers</h2>
-      <table>
-        <thead>
-          <tr><th>Header</th><th>Status</th><th>Value</th><th>Note</th></tr>
-        </thead>
-        <tbody>
-          {% for header in data.headers %}
-          <tr>
-            <td>{{ header.header }}</td>
-            <td>{{ header.status }}</td>
-            <td>{{ header.value }}</td>
-            <td>{{ header.note or "" }}</td>
-          </tr>
-          {% else %}
-          <tr><td colspan="4">No header data available.</td></tr>
+      <article class="card">
+        <header class="card__header">
+          <h2>Technology Stack</h2>
+          <span class="muted">{{ data.technology|length }} detected</span>
+        </header>
+        <table>
+          <thead>
+            <tr><th>Name</th><th>Confidence</th><th>Evidence</th></tr>
+          </thead>
+          <tbody>
+            {% for tech in data.technology %}
+            <tr>
+              <td>{{ tech.name }}</td>
+              <td>{{ tech.confidence }}</td>
+              <td>{{ tech.evidence or "—" }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="3">No technologies detected.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </article>
+
+      <article class="card">
+        <header class="card__header">
+          <h2>Security Headers</h2>
+          <span class="muted">Normalised top recommendations</span>
+        </header>
+        <table>
+          <thead>
+            <tr><th>Header</th><th>Status</th><th>Value</th><th>Note</th></tr>
+          </thead>
+          <tbody>
+            {% for header in data.headers %}
+            {% set status = header.status|lower %}
+            <tr>
+              <td>{{ header.header }}</td>
+              <td>
+                <span class="badge {{ status if status in ['secure', 'needs_review', 'missing'] else 'medium' }}">
+                  {{ header.status.replace('_', ' ')|title }}
+                </span>
+              </td>
+              <td>{{ header.value }}</td>
+              <td>{{ header.note or "" }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4">No header data available.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </article>
+
+      <article class="card">
+        <header class="card__header">
+          <h2>TLS Summary</h2>
+          <span class="muted">Certificate intelligence</span>
+        </header>
+        <dl>
+          <div>
+            <dt>Subject</dt>
+            <dd>{{ data.tls.subject or "—" }}</dd>
+          </div>
+          <div>
+            <dt>Issuer</dt>
+            <dd>{{ data.tls.issuer or "—" }}</dd>
+          </div>
+          <div>
+            <dt>Valid From</dt>
+            <dd>{{ data.tls.valid_from or "—" }}</dd>
+          </div>
+          <div>
+            <dt>Valid To</dt>
+            <dd>{{ data.tls.valid_to or "—" }}</dd>
+          </div>
+          <div>
+            <dt>Days Remaining</dt>
+            <dd>{{ data.tls.days_remaining if data.tls.days_remaining is not none else "—" }}</dd>
+          </div>
+          <div>
+            <dt>Key Type</dt>
+            <dd>{{ data.tls.key_type or "Unknown" }}</dd>
+          </div>
+          <div>
+            <dt>Key Size</dt>
+            <dd>{{ data.tls.key_size or "—" }}</dd>
+          </div>
+          <div>
+            <dt>Signature</dt>
+            <dd>{{ data.tls.signature or "—" }}</dd>
+          </div>
+        </dl>
+        {% if data.tls.findings %}
+        <h3>Findings</h3>
+        <ul>
+          {% for message in data.tls.findings %}
+          <li>{{ message }}</li>
           {% endfor %}
-        </tbody>
-      </table>
-    </div>
+        </ul>
+        {% endif %}
+      </article>
 
-    <div class="card">
-      <h2>TLS Summary</h2>
-      <table>
-        <tbody>
-          <tr><th>Subject</th><td>{{ data.tls.subject or "—" }}</td></tr>
-          <tr><th>Issuer</th><td>{{ data.tls.issuer or "—" }}</td></tr>
-          <tr><th>Valid From</th><td>{{ data.tls.valid_from or "—" }}</td></tr>
-          <tr><th>Valid To</th><td>{{ data.tls.valid_to or "—" }}</td></tr>
-          <tr><th>Days Remaining</th><td>{{ data.tls.days_remaining if data.tls.days_remaining is not none else "—" }}</td></tr>
-          <tr><th>Key Type</th><td>{{ data.tls.key_type or "Unknown" }}</td></tr>
-          <tr><th>Key Size</th><td>{{ data.tls.key_size or "—" }}</td></tr>
-          <tr><th>Signature</th><td>{{ data.tls.signature or "—" }}</td></tr>
-        </tbody>
-      </table>
-      {% if data.tls.findings %}
-      <h3>Findings</h3>
-      <ul>
-        {% for message in data.tls.findings %}
-        <li>{{ message }}</li>
-        {% endfor %}
-      </ul>
-      {% endif %}
-    </div>
+      <article class="card">
+        <header class="card__header">
+          <h2>Exposure Checks</h2>
+          <span class="muted">{{ data.exposures|length }} findings</span>
+        </header>
+        <table>
+          <thead>
+            <tr><th>Path</th><th>Status</th><th>Risk</th><th>Detail</th></tr>
+          </thead>
+          <tbody>
+            {% for exposure in data.exposures %}
+            <tr>
+              <td>{{ exposure.path }}</td>
+              <td>{{ exposure.status }}</td>
+              <td>
+                <span class="badge {{ exposure.risk|lower }}">{{ exposure.risk|title }}</span>
+              </td>
+              <td>{{ exposure.detail or "" }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4">No exposure findings.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </article>
 
-    <div class="card">
-      <h2>Exposure Checks</h2>
-      <table>
-        <thead>
-          <tr><th>Path</th><th>Status</th><th>Risk</th><th>Detail</th></tr>
-        </thead>
-        <tbody>
-          {% for exposure in data.exposures %}
-          <tr>
-            <td>{{ exposure.path }}</td>
-            <td>{{ exposure.status }}</td>
-            <td>{{ exposure.risk }}</td>
-            <td>{{ exposure.detail or "" }}</td>
-          </tr>
-          {% else %}
-          <tr><td colspan="4">No exposure findings.</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
-    <div class="card">
-      <h2>Raw Response Headers</h2>
-      <pre>{{ data.raw_headers | tojson(indent=2) }}</pre>
-    </div>
+      <article class="card">
+        <header class="card__header">
+          <h2>Raw Response Headers</h2>
+          <span class="muted">Captured upstream</span>
+        </header>
+        <pre>{{ data.raw_headers | tojson(indent=2) }}</pre>
+      </article>
+    </section>
   </body>
 </html>
