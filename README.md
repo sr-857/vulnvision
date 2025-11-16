@@ -93,7 +93,7 @@ Set the **API Base** input (top-right of the dashboard) to `http://localhost:800
 
 ```json
 {
-  "target": "https://example.com"
+  "target": "example.com"
 }
 ```
 
@@ -101,30 +101,39 @@ Response (abridged):
 
 ```json
 {
-  "target": "https://example.com",
-  "fetched_url": "https://www.example.com",
+  "target": "example.com",
+  "fetched_url": "https://example.com/",
+  "status_code": 200,
   "risk": {
     "level": "Low",
-    "reasons": ["Missing security header: Content-Security-Policy"]
+    "reasons": ["No significant issues detected"]
   },
   "technology": [
     {"name": "Cloudflare", "confidence": "Medium", "evidence": "server: cloudflare"}
   ],
-  "headers": [...],
-  "tls": {
-    "issuer": "Let's Encrypt",
-    "valid_to": "2025-02-18T12:34:56Z",
-    "findings": ["Certificate expires within 30 days"]
-  },
-  "exposures": [
-    {"path": "/admin", "status": 302, "risk": "medium", "detail": "Admin portal (redirect)"}
+  "headers": [
+    {"header": "content-security-policy", "status": "missing", "note": "Define CSP"}
   ],
-  "raw_headers": {"server": "cloudflare"},
+  "tls": {
+    "subject": "CN=example.com",
+    "issuer": "DigiCert Inc",
+    "valid_from": "2025-01-01T00:00:00Z",
+    "valid_to": "2025-03-31T23:59:59Z",
+    "days_remaining": 45,
+    "findings": ["Certificate expires within 60 days"]
+  },
+  "exposures": [],
+  "raw_headers": {
+    "server": "cloudflare"
+  },
+  "response_headers": {
+    "server": "cloudflare"
+  },
   "scanned_at": "2025-11-16T04:12:00+00:00"
 }
 ```
 
-`POST /report` accepts the same body and returns the HTML report matching the dashboard.
+`POST /report` accepts the same payload and returns the HTML report.
 
 ---
 
