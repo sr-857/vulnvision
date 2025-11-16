@@ -4,13 +4,28 @@
 [![Public API](https://img.shields.io/badge/api-render-blue?style=for-the-badge&logo=fastapi&logoColor=white)](https://vulnvision.onrender.com/docs)
 [![License: MIT](https://img.shields.io/badge/license-MIT-ffc861?style=for-the-badge)](./LICENSE)
 
-VulnVision delivers a judge-ready passive reconnaissance experience: point the dashboard at any public target and watch it fingerprint technologies, grade security headers, inspect TLS metadata, surface exposed panels, and package the findings into a downloadable HTML report.
+VulnVision is a production-grade passive reconnaissance platform built for hackathon judging panels and real-world teams alike. Launch the dashboard, target any public domain, and receive an end-to-end intelligence package—technology fingerprinting, security-header grading, TLS analytics, exposure sweeps, and a branded HTML report—without sending intrusive traffic.
 
 > **Ethical use only.** VulnVision performs non-intrusive, read-only checks. Obtain permission before scanning a target.
 
 ---
 
-## ✨ What’s Included
+## 📚 Table of Contents
+
+1. [Platform Highlights](#-platform-highlights)
+2. [Live Experience](#-live-experience)
+3. [Architecture Overview](#-architecture-overview)
+4. [Quick Start (Local)](#-quick-start-local)
+5. [Production Deployment](#-production-deployment)
+6. [Feature Deep Dive](#-feature-deep-dive)
+7. [API Reference](#-api-reference-ui-contract)
+8. [Quality & CI](#-quality--ci)
+9. [Contributing & Hackathon Checklist](#-contributing--hackathon-checklist)
+10. [License](#-license)
+
+---
+
+## ✨ Platform Highlights
 
 - **Live dashboard** served via GitHub Pages — zero setup for judges
 - **FastAPI backend** on Render — shared API powering the scan and report endpoints
@@ -30,17 +45,17 @@ VulnVision delivers a judge-ready passive reconnaissance experience: point the d
 Launch the dashboard, trigger a scan, and hand off the report within 60 seconds — no local setup required.
 
 ## 🧩 Architecture Overview
-<img width="1236" height="924" alt="ChatGPT Image Nov 16, 2025, 10_16_19 AM" src="https://github.com/user-attachments/assets/c3b8d3d3-0aec-4c1f-9ca0-8b6b3c9a5856" />
+<img width="1236" height="924" alt="VulnVision architecture diagram" src="https://github.com/user-attachments/assets/c3b8d3d3-0aec-4c1f-9ca0-8b6b3c9a5856" />
 
 ```mermaid
 flowchart LR
-    user([User]) --> ui[Frontend]
+    user([Analyst]) --> ui[Frontend]
     ui --> backend(FastAPI Backend)
     backend --> headers[Header Audit]
     backend --> tls[TLS Inspection]
     backend --> tech[Tech Detection]
     backend --> exposures[Exposure Sweep]
-    backend --> report([Downloadable Report])
+    backend --> report([HTML Report])
     report --> user
 ```
 
@@ -60,7 +75,7 @@ uvicorn backend.main:app --reload --port 8000
 open docs/index.html  # or serve docs/ via any static server
 ```
 
-Set the **API Base** input (top-right of the dashboard) to `http://localhost:8000` and start scanning.
+Set the **API Base** control (top-right of the dashboard) to `http://localhost:8000` before submitting a scan.
 
 ---
 
@@ -68,7 +83,7 @@ Set the **API Base** input (top-right of the dashboard) to `http://localhost:800
 
 | Component | Hosting | Notes |
 | --- | --- | --- |
-| Frontend | GitHub Pages (`/docs`) | Already live at [sr-857.github.io/vulnvision](https://sr-857.github.io/vulnvision) |
+| Frontend | GitHub Pages (`/docs`) | Deployed at [sr-857.github.io/vulnvision](https://sr-857.github.io/vulnvision) |
 | Backend | Render Web Service | Deploy `backend/` with start command `uvicorn main:app --host 0.0.0.0 --port $PORT` |
 | API Base Override | `window.VULNVISION_API_BASE` | Configured in `docs/index.html` to hit `https://vulnvision.onrender.com` |
 
@@ -86,13 +101,13 @@ Set the **API Base** input (top-right of the dashboard) to `http://localhost:800
 
 | Category | Details |
 | --- | --- |
-| **Risk Storytelling** | Aggregated risk grade with deduplicated bullet reasoning. |
-| **Security Headers** | Normalises popular headers (CSP, HSTS, XFO, Referrer, Permissions) with colour-coded status. |
-| **TLS Summary** | Presents subject, issuer, validity window, SANs, findings, and expiry countdown. |
-| **Technology Fingerprinting** | DOM + header signatures, meta generator parsing, favicon hashing (mmh3) for WordPress, React, Angular, Vercel, Wix, GitHub Pages, etc. |
-| **Exposure Recon** | 30+ high-signal paths (git leaks, env files, backups, admin consoles, metrics endpoints) with risk scoring. |
-| **Caching + Rate Limits** | 120-second cache per target + 30 req/minute global limiter keeps the shared demo reliable. |
-| **Reporting** | `/report` reuses the same payload and renders a styled HTML export. |
+| **Risk Storytelling** | Aggregated risk grade backed by deduplicated, human-readable reasoning. |
+| **Security Headers** | Normalises CSP, HSTS, XFO, Referrer Policy, Permissions Policy, and more with colour-coded status. |
+| **TLS Summary** | Surfaces subject, issuer, validity window, SANs, signature algorithm, key size, and expiry countdown. |
+| **Technology Fingerprinting** | Combines DOM parsing, response headers, cookies, and favicon hashing (mmh3) for accurate vendor detection. |
+| **Exposure Recon** | Tests 30+ high-signal paths (git leaks, env files, backups, admin consoles, metrics endpoints) with risk scoring. |
+| **Caching + Rate Limits** | 120-second per-target cache and 30-requests/minute guardrail keep the shared demo responsive. |
+| **Reporting** | `/report` endpoint reuses the same payload and renders a styled, export-ready HTML report. |
 
 ---
 
@@ -148,10 +163,10 @@ Response (abridged):
 
 ## 🧪 Quality & CI
 
-- **Smoke tests:** Minimal pytest ensures the FastAPI app imports successfully.
-- **Formatting:** Prettified dashboard, shared CSS modifiers, HTML report aligned with UI wording.
-- **Security:** Subresource Integrity (SRI) on CDN assets, permissive CORS for demo, rate throttling.
-- **Roadmap:** Add unit coverage for scanners, integrate CodeQL, publish container image.
+- **Smoke tests:** Lightweight pytest coverage verifies the FastAPI app imports successfully.
+- **Formatting:** Shared CSS tokens and polished typography keep dashboard and report visuals aligned.
+- **Security:** Subresource Integrity (SRI) on CDN assets, permissive-but-token CORS, and rate limiting.
+- **Roadmap:** Expand automated scanner coverage, integrate CodeQL, and publish a container image.
 
 See `.github/workflows/ci.yml` for the current pipeline.
 
@@ -159,11 +174,11 @@ See `.github/workflows/ci.yml` for the current pipeline.
 
 ## 🤝 Contributing & Hackathon Checklist
 
-- **Showcase the feature depth:** Run live scans against `demo.owasp-juice.shop` to produce technology fingerprints, TLS insights, and exposure findings that exercise every panel.
-- **Refresh visual assets:** Capture updated dashboard and report screenshots, storing them in `docs/assets/screenshots/` for judge-ready collateral.
-- **Publish an offline sample:** Export a current HTML report to `docs/examples/demo_report.html` so the experience is reviewable without network access.
-- **Cut a release when stabilized:** Tag the frozen demo (`git tag -a v1.0 -m "Hackathon release" && git push origin v1.0`) to capture the final build.
-- **Stay within passive boundaries:** All scans should remain read-only and respect the baked-in rate limits; when submitting PRs, preserve that stance.
+- **Showcase the depth:** Run scans against `demo.owasp-juice.shop` to demonstrate technology detection, TLS analytics, and exposure findings end-to-end.
+- **Refresh visual assets:** Capture current dashboard and report screenshots in `docs/assets/screenshots/` for pitch collateral.
+- **Publish an offline sample:** Export an up-to-date HTML report to `docs/examples/demo_report.html` so judges can review without network access.
+- **Cut a release when frozen:** Tag the stable demo (`git tag -a v1.0 -m "Hackathon release" && git push origin v1.0`) before the final presentation.
+- **Preserve passive-only posture:** Keep scans read-only and respect the existing rate limits when contributing.
 
 ---
 
