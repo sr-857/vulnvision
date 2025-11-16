@@ -22,7 +22,17 @@ VulnVision delivers a judge-ready passive reconnaissance experience: point the d
 
 ## 🧩 Architecture Overview
 
-![VulnVision Architecture](docs/assets/architecture.png)
+```mermaid
+flowchart LR
+    user([User]) --> ui[Frontend (HTML/CSS/JS)]
+    ui --> backend[FastAPI Backend]
+    backend --> headers[Header Audit]
+    backend --> tls[TLS Inspection]
+    backend --> tech[Tech Detection]
+    backend --> exposures[Exposure Sweep]
+    backend --> report[Downloadable Report]
+    report --> user
+```
 
 ---
 
