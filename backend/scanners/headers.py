@@ -1,76 +1,59 @@
-"""Security header auditing utilities for VulnVision."""
+"""HTTP security header reconnaissance for VulnVision."""
+
 from __future__ import annotations
 
-from typing import Dict, List, Literal, Tuple
+from typing import Dict, List
+from urllib.parse import urljoin
 
-HeaderStatus = Literal["secure", "needs_review", "missing"]
+import requests
 
-SECURITY_HEADERS: Dict[str, Dict[str, List[str]]] = {
-    "Content-Security-Policy": {
-        "bad_substrings": ["unsafe-inline", "unsafe-eval"],
-    },
-    "X-Frame-Options": {
-        "allowed_values": ["DENY", "SAMEORIGIN"],
-    },
-    "X-Content-Type-Options": {
-        "allowed_values": ["nosniff"],
-    },
-    "Strict-Transport-Security": {
-        "requires_https": True,
-    },
-    "Referrer-Policy": {
-        "allowed_values": [
-            "no-referrer",
-            "no-referrer-when-downgrade",
-            "strict-origin",
-            "strict-origin-when-cross-origin",
-            "same-origin",
-        ],
-    },
-    "Permissions-Policy": {
-        "requires_value": True,
-    },
-}
+IMPORTANT_HEADERS: List[str] = [
+    "Content-Security-Policy",
+    "X-Frame-Options",
+    "X-Content-Type-Options",
+    "Strict-Transport-Security",
+    "Referrer-Policy",
+    "Permissions-Policy",
+]
+
+USER_AGENT = "VulnVision-Headers/1.0"
+DEFAULT_PROBES = ["/", "/index.html"]
 
 
-def classify_header(name: str, value: str | None, is_https: bool) -> Tuple[HeaderStatus, str]:
-    """Classify a security header value and return status + note."""
-    if value is None:
-        return "missing", "Header not present"
+def scan_domain(target_url: str) -> Dict[str, object]:
+    """Fetch a representative page and evaluate headline security headers."""
 
-    policy = SECURITY_HEADERS.get(name, {})
+    result: Dict[str, object] = {
+        "headers": {},
+        "present_headers": [],
+        "missing_headers": [],
+        "status_code": None,
+    }
 
-    if policy.get("requires_https") and not is_https:
-        return "needs_review", "Only effective over HTTPS"
+    session = requests.Session()
+    session.headers.update({"User-Agent": USER_AGENT})
 
-    allowed_values = policy.get("allowed_values")
-    if allowed_values is not None and value.strip() not in allowed_values:
-        return "needs_review", f"Unexpected value `{value}`"
+    for path in DEFAULT_PROBES:
+        probe_url = urljoin(target_url, path)
+        try:
+            response = session.get(probe_url, timeout=6, allow_redirects=True)
+        except requests.RequestException:
+            continue
 
-    bad_substrings = policy.get("bad_substrings", [])
-    for bad in bad_substrings:
-        if bad in value:
-            return "needs_review", f"Contains `{bad}`"
+        result["status_code"] = response.status_code
+        headers = {k: v for k, v in response.headers.items()}
+        result["headers"] = headers
 
-    if policy.get("requires_value") and not value.strip():
-        return "needs_review", "Header present but empty"
+        lowered = {k.lower(): v for k, v in headers.items()}
+        present: List[str] = []
+        missing: List[str] = []
+        for header in IMPORTANT_HEADERS:
+            if header in headers or header.lower() in lowered:
+                present.append(header)
+            else:
+                missing.append(header)
+        result["present_headers"] = present
+        result["missing_headers"] = missing
+        break  # stop after first successful probe
 
-    return "secure", "OK"
-
-
-def audit_security_headers(
-    headers: Dict[str, str], *, is_https: bool
-) -> List[Dict[str, str]]:
-    """Return a structured assessment for each watched security header."""
-    normalized = {k.lower(): v for k, v in headers.items()}
-    results: List[Dict[str, str]] = []
-    for header in SECURITY_HEADERS:
-        value = normalized.get(header.lower())
-        status, note = classify_header(header, value, is_https)
-        results.append({
-            "header": header,
-            "value": value,
-            "status": status,
-            "note": note,
-        })
-    return results
+    return result

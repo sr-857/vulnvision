@@ -1,26 +1,26 @@
-from __future__ import annotations
-
-import ipaddress
-import re
+import asyncio
 from datetime import datetime, timezone
 from typing import Any, Dict, List
-from urllib.parse import urlparse
 
-import requests
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
-from pydantic import BaseModel, Field, HttpUrl, validator
+from pydantic import BaseModel
+from starlette.responses import Response
 
-from .scanners.exposure import run_exposure_checks
-from .scanners.headers import audit_security_headers
-from .scanners.sslscan import analyze_certificate
-from .scanners.techdetect import detect_technologies
-from .utils.report import render_report
+from scanners import exposure, headers as headers_scanner, sslscan, techdetect
+from utils import report as report_utils
 
-USER_AGENT = "VulnVision/1.0"
+APP_TITLE = "VulnVision - Backend (UI contract)"
+IMPORTANT_HEADERS: List[str] = [
+    "Content-Security-Policy",
+    "X-Frame-Options",
+    "X-Content-Type-Options",
+    "Strict-Transport-Security",
+    "Referrer-Policy",
+    "Permissions-Policy",
+]
 
-app = FastAPI(title="VulnVision", version="0.1.0")
+app = FastAPI(title=APP_TITLE)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -31,288 +31,221 @@ app.add_middleware(
 
 
 class ScanRequest(BaseModel):
-    target: HttpUrl = Field(..., description="Target URL including scheme")
+    target: str
 
-    @validator("target")
-    def only_http_https(cls, value: HttpUrl) -> HttpUrl:
-        if value.scheme not in {"http", "https"}:
-            raise ValueError("Only http and https schemes are supported")
+
+def normalize_target(raw: str) -> str:
+    value = (raw or "").strip()
+    if not value:
+        raise ValueError("target required")
+    if value.startswith(("http://", "https://")):
         return value
+    return f"https://{value}"
 
 
-def resolve_ip(hostname: str) -> str | None:
-    try:
-        ip = requests.get(f"https://dns.google/resolve?name={hostname}&type=A", timeout=5)
-        ip.raise_for_status()
-        answers = ip.json().get("Answer", [])
-        for answer in answers:
-            data = answer.get("data")
-            if data:
-                try:
-                    ipaddress.ip_address(data)
-                    return data
-                except ValueError:
-                    continue
-    except requests.RequestException:
-        return None
-    return None
-
-
-def fetch_target(url: str) -> tuple[requests.Response | None, str]:
-    try:
-        response = requests.get(
-            url,
-            headers={"User-Agent": USER_AGENT},
-            timeout=10,
-            allow_redirects=True,
-        )
-        response.raise_for_status()
-        return response, response.url
-    except requests.HTTPError as exc:
-        if exc.response is not None:
-            return exc.response, exc.response.url
-        return None, url
-    except requests.RequestException:
-        return None, url
-
-
-def compute_risk(
-    headers_result: List[Dict[str, str | None]],
-    ssl_result: Dict[str, Any],
-    exposures: List[Dict[str, str]],
-) -> Dict[str, Any]:
-    level = "low"
-    reasons: List[str] = []
-
-    for header in headers_result:
-        status = (header.get("status") or "").lower()
-        if status == "missing":
-            level = "high"
-            reasons.append(f"Missing security header: {header['header']}")
-        elif status == "needs_review" and level != "high":
-            level = "medium"
-            reasons.append(f"Header needs review: {header['header']}")
-
-    for finding in ssl_result.get("findings", []):
-        severity = (finding.get("severity") or "").lower()
-        message = finding.get("message", "")
-        if severity == "high":
-            level = "high"
-        elif severity == "medium" and level == "low":
-            level = "medium"
-        if message:
-            reasons.append(f"SSL: {message}")
-
-    for exposure in exposures:
-        risk = (exposure.get("risk") or "").lower()
-        detail = exposure.get("detail", exposure.get("path", ""))
-        if risk == "high":
-            level = "high"
-        elif risk == "medium" and level == "low":
-            level = "medium"
-        if detail:
-            reasons.append(f"Exposure: {detail}")
-
-    if not reasons:
-        reasons.append("No significant issues detected")
-
-    return {"level": level.title(), "reasons": reasons}
-
-
-def flatten_headers(headers: Any) -> Dict[str, str]:
-    normalized: Dict[str, str] = {}
-    for key, value in headers.items():
-        if isinstance(value, list):
-            normalized[key] = ", ".join(str(v) for v in value)
-        else:
-            normalized[key] = str(value)
-    return normalized
-
-
-def normalize_tech_stack(findings: List[Dict[str, str]]) -> List[Dict[str, str]]:
-    normalized: List[Dict[str, str]] = []
-    for entry in findings:
-        normalized.append(
-            {
-                "name": entry.get("name", "Unknown"),
-                "confidence": entry.get("confidence", "Unknown"),
-                "evidence": entry.get("evidence", ""),
-            }
-        )
-    return normalized
-
-
-def format_security_headers(headers_result: List[Dict[str, str | None]]) -> List[Dict[str, str]]:
-    formatted: List[Dict[str, str]] = []
-    for header in headers_result:
-        status = (header.get("status") or "").lower()
-        formatted.append(
-            {
-                "header": header.get("header", ""),
-                "status": status,
-                "value": header.get("value") or "",
-                "note": header.get("note") or "",
-            }
-        )
-    return formatted
-
-
-def normalize_tls(ssl_result: Dict[str, Any]) -> tuple[Dict[str, Any], Dict[str, Any]]:
-    present = ssl_result.get("present")
-    summary = ssl_result.get("summary") or {}
-    findings = ssl_result.get("findings") or []
-    normalized_summary: Dict[str, Any] | None = None
-    if present and summary:
-        normalized_summary = {
-            "subject": summary.get("subject", ""),
-            "issuer": summary.get("issuer", ""),
-            "not_before": summary.get("not_before"),
-            "not_after": summary.get("not_after"),
-            "days_remaining": summary.get("days_remaining"),
-            "signature_algorithm": summary.get("signature_algorithm"),
-            "key_type": summary.get("key_type"),
-            "key_size": summary.get("key_size"),
-            "san": summary.get("san", []),
-        }
-
-    normalized_findings = [
-        {
-            "message": finding.get("message", ""),
-            "severity": (finding.get("severity") or "unknown").lower(),
-        }
-        for finding in findings
-    ]
-
-    # Legacy findings may appear in the root tls dict; include them.
-    root_findings = ssl_result.get("findings") or []
-    if isinstance(root_findings, list):
-        normalized_findings.extend(
-            {
-                "message": item.get("message", ""),
-                "severity": (item.get("severity") or "unknown").lower(),
-            }
-            for item in root_findings
-        )
-
-    # Deduplicate findings
-    seen: set[tuple[str, str]] = set()
-    unique_findings: List[Dict[str, str]] = []
-    for item in normalized_findings:
-        key = (item["message"], item["severity"])
-        if key in seen:
+def dedupe(sequence: List[str]) -> List[str]:
+    seen: set[str] = set()
+    ordered: List[str] = []
+    for item in sequence:
+        if not item:
             continue
-        seen.add(key)
-        unique_findings.append(item)
+        if item in seen:
+            continue
+        seen.add(item)
+        ordered.append(item)
+    return ordered
 
-    tls_payload = {
-        "present": bool(present and normalized_summary),
-        "subject": (normalized_summary or {}).get("subject", ""),
-        "issuer": (normalized_summary or {}).get("issuer", ""),
-        "valid_from": (normalized_summary or {}).get("not_before"),
-        "valid_to": (normalized_summary or {}).get("not_after"),
-        "days_remaining": (normalized_summary or {}).get("days_remaining"),
-        "key_type": (normalized_summary or {}).get("key_type"),
-        "key_size": (normalized_summary or {}).get("key_size"),
-        "signature": (normalized_summary or {}).get("signature_algorithm"),
-        "san": (normalized_summary or {}).get("san", []),
-        "findings": [item["message"] for item in unique_findings if item["message"]],
+
+def classify_exposure(entry: Dict[str, Any]) -> str:
+    path = entry.get("path", "")
+    status = entry.get("status")
+    high_paths = {"/.git/", "/.env", "/backup.zip", "/config.php"}
+    if status in (200, 301, 302) and path in high_paths:
+        return "high"
+    if path == "/robots.txt" and status == 200:
+        return "medium"
+    if status in (401, 403):
+        return "low"
+    if status == 200 and path == "/admin":
+        return "medium"
+    return "low"
+
+
+async def perform_scan(raw_target: str) -> Dict[str, Any]:
+    url = normalize_target(raw_target)
+
+    try:
+        headers_res, ssl_res, tech_res, exposure_res = await asyncio.gather(
+            asyncio.to_thread(headers_scanner.scan_domain, url),
+            asyncio.to_thread(sslscan.scan_domain, url),
+            asyncio.to_thread(techdetect.scan_domain, url),
+            asyncio.to_thread(exposure.scan_domain, url),
+        )
+    except Exception as exc:  # pragma: no cover - safety net
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    raw_headers = headers_res.get("headers") or {}
+    lowered_headers = {k.lower(): v for k, v in raw_headers.items()}
+
+    header_rows: List[Dict[str, Any]] = []
+    risk_reasons: List[str] = []
+    for header_name in IMPORTANT_HEADERS:
+        value = raw_headers.get(header_name)
+        if value is None:
+            value = lowered_headers.get(header_name.lower())
+        status = "missing"
+        note = "Header not present"
+        if header_name in headers_res.get("present_headers", []):
+            status = "secure"
+            note = ""
+        elif value:
+            status = "needs_review"
+            note = "Unexpected value"
+        if status == "missing":
+            risk_reasons.append(f"Missing security header: {header_name}")
+        elif status == "needs_review":
+            risk_reasons.append(f"Header needs review: {header_name}")
+        header_rows.append(
+            {
+                "header": header_name,
+                "status": status,
+                "value": value or "—",
+                "note": note,
+            }
+        )
+
+    exposures: List[Dict[str, Any]] = []
+    for entry in exposure_res.get("exposures", []):
+        path = entry.get("path", "")
+        status_code = entry.get("status")
+        detail = entry.get("detail", "")
+        risk = classify_exposure(entry)
+        if risk in ("high", "medium"):
+            descriptor = detail or "exposed path"
+            risk_reasons.append(f"Exposure: {path} — {descriptor}")
+        exposures.append(
+            {
+                "path": path,
+                "status": status_code,
+                "risk": risk,
+                "detail": detail,
+            }
+        )
+
+    tls_findings: List[str] = []
+    days_remaining = ssl_res.get("days_to_expire")
+    if isinstance(days_remaining, int) and days_remaining < 45:
+        tls_findings.append(f"Certificate expires within {days_remaining} days")
+        risk_reasons.append(f"TLS certificate expires within {days_remaining} days")
+    if not ssl_res.get("valid", False):
+        tls_findings.append("Certificate validation failed or is expired")
+        risk_reasons.append("TLS: certificate invalid or expired")
+    if ssl_res.get("error"):
+        tls_findings.append(ssl_res["error"])
+
+    tls_payload: Dict[str, Any] = {
+        "subject": ssl_res.get("subject", ""),
+        "issuer": ssl_res.get("issuer", ""),
+        "valid_from": ssl_res.get("not_before"),
+        "valid_to": ssl_res.get("not_after"),
+        "days_remaining": days_remaining,
+        "key_type": ssl_res.get("key_type"),
+        "key_size": ssl_res.get("key_size"),
+        "signature": ssl_res.get("signature_algorithm"),
+        "san": ssl_res.get("san", []),
+        "valid": ssl_res.get("valid", False),
+        "findings": tls_findings,
     }
 
     ssl_payload = {
-        "present": bool(present and normalized_summary),
-        "summary": normalized_summary,
-        "findings": unique_findings,
-    }
-
-    return tls_payload, ssl_payload
-
-
-def normalize_exposures(findings: List[Dict[str, str]]) -> List[Dict[str, str]]:
-    normalized: List[Dict[str, str]] = []
-    for finding in findings:
-        normalized.append(
-            {
-                "path": finding.get("path", ""),
-                "status": finding.get("status", ""),
-                "risk": (finding.get("risk") or "").lower(),
-                "detail": finding.get("detail", ""),
-            }
-        )
-    return normalized
-
-
-def normalize_response_headers(headers: Dict[str, str]) -> Dict[str, str]:
-    return {k.lower(): v for k, v in headers.items()}
-
-
-def perform_scan(target_url: str) -> Dict[str, Any]:
-    parsed = urlparse(target_url)
-    hostname = parsed.hostname
-    if not hostname:
-        raise HTTPException(status_code=400, detail="Invalid hostname in URL")
-
-    response, final_url = fetch_target(target_url)
-    response_headers: Dict[str, str] = {}
-    status_code: int | None = None
-    body: str | None = None
-
-    if response is not None:
-        response_headers = flatten_headers(response.headers)
-        status_code = response.status_code
-        body = response.text if response.headers.get("content-type", "").startswith("text") else None
-
-    is_https = final_url.startswith("https")
-
-    tech_stack = detect_technologies(final_url, response_headers, body)
-    security_headers = audit_security_headers(response_headers, is_https=is_https)
-    ssl_info = analyze_certificate(hostname) if is_https else {
-        "present": False,
-        "summary": None,
+        "present": bool(tls_payload["subject"] or tls_payload["issuer"]),
+        "summary": {
+            "subject": tls_payload["subject"],
+            "issuer": tls_payload["issuer"],
+            "not_before": tls_payload["valid_from"],
+            "not_after": tls_payload["valid_to"],
+            "days_remaining": tls_payload["days_remaining"],
+            "signature_algorithm": tls_payload["signature"],
+            "key_type": tls_payload["key_type"],
+            "key_size": tls_payload["key_size"],
+            "san": tls_payload["san"],
+        },
         "findings": [
-            {"message": "Target not served over HTTPS", "severity": "medium"}
+            {"message": message, "severity": "medium"} for message in tls_findings
         ],
     }
-    exposures = run_exposure_checks(final_url)
-    risk = compute_risk(security_headers, ssl_info, exposures)
 
-    server_ip = resolve_ip(hostname)
+    tech_payload: List[Dict[str, Any]] = []
+    for item in tech_res.get("technologies", []):
+        if isinstance(item, dict):
+            name = item.get("name", "Unknown")
+            confidence = item.get("confidence", "medium")
+            evidence = item.get("evidence", "")
+        else:
+            name = str(item)
+            confidence = "medium"
+            evidence = ""
+        tech_payload.append(
+            {
+                "name": name,
+                "confidence": confidence.title(),
+                "evidence": evidence,
+            }
+        )
 
-    tls_payload, ssl_payload = normalize_tls(ssl_info)
+    missing_headers = sum(1 for header in header_rows if header["status"] == "missing")
+    high_exposures = sum(1 for exposure_entry in exposures if exposure_entry["risk"] == "high")
+    score = missing_headers + high_exposures * 2
+    if not ssl_res.get("valid", False):
+        score += 2
 
-    formatted_headers = format_security_headers(security_headers)
-    tech_payload = normalize_tech_stack(tech_stack)
+    if score >= 4:
+        risk_level = "High"
+    elif score >= 2:
+        risk_level = "Medium"
+    else:
+        risk_level = "Low"
 
-    normalized_response = {
-        "target": target_url,
-        "fetched_url": final_url,
-        "status_code": status_code,
-        "response_headers": normalize_response_headers(response_headers),
-        "raw_headers": response_headers,
-        "server_ip": server_ip,
-        "tech_stack": tech_payload,
+    risk_reasons = dedupe(risk_reasons)
+    if not risk_reasons:
+        risk_reasons = ["No significant issues detected"]
+
+    response_payload: Dict[str, Any] = {
+        "target": raw_target,
+        "fetched_url": url,
+        "status_code": headers_res.get("status_code"),
+        "response_headers": {k.lower(): v for k, v in raw_headers.items()},
+        "raw_headers": raw_headers,
         "technology": tech_payload,
-        "security_headers": formatted_headers,
-        "headers": formatted_headers,
+        "tech_stack": tech_payload,
+        "headers": header_rows,
+        "security_headers": header_rows,
         "tls": tls_payload,
         "ssl": ssl_payload,
-        "exposures": normalize_exposures(exposures),
+        "exposures": exposures,
         "risk": {
-            "level": risk.get("level", "Unknown"),
-            "reasons": risk.get("reasons", []),
+            "level": risk_level,
+            "reasons": risk_reasons,
         },
         "scanned_at": datetime.now(timezone.utc).isoformat(),
     }
 
-    return normalized_response
+    return response_payload
 
 
 @app.post("/scan")
-def scan(request: ScanRequest) -> Dict[str, Any]:
-    return perform_scan(request.target)
+async def scan(request: ScanRequest) -> Dict[str, Any]:
+    try:
+        return await perform_scan(request.target)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
-@app.post("/report", response_class=HTMLResponse)
-def report(request: ScanRequest) -> HTMLResponse:
-    result = perform_scan(request.target)
-    html = render_report(result)
-    return HTMLResponse(content=html, media_type="text/html")
+@app.post("/report")
+async def report(request: ScanRequest) -> Response:
+    try:
+        data = await perform_scan(request.target)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    html = report_utils.render_html(data)
+    return Response(content=html, media_type="text/html")
