@@ -1,754 +1,506 @@
-<!DOCTYPE html>
+<\!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>VulnVision · Passive Recon Control Center</title>
-    <link rel="stylesheet" href="styles.css" />
-    <script
-      src="https://cdn.jsdelivr.net/npm/chart.js@4.4.5/dist/chart.umd.min.js"
-      integrity="sha384-MY7MzGt1eo8yEmzMhq5OA4nmpW53GMFFJkybLBGnp9KKnz4YKarSqrHpEe+Th9qH"
-      crossorigin="anonymous"
-    ></script>
-    <script>
-      window.VULNVISION_API_BASE = "https://vulnvision.onrender.com";
-    </script>
-    <script src="dashboard.js"></script>
-  </head>
-  <body>
-    <canvas id="background" aria-hidden="true"></canvas>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VulnVision — Passive Recon Intelligence</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #050914;
+      --bg-muted: #0b1224;
+      --cyan: #29ffd4;
+      --blue: #5a7dff;
+      --magenta: #ff4fd8;
+      --text: #f3f7ff;
+      --text-muted: #a5b4ff;
+      --shadow: rgba(5, 12, 35, 0.65);
+      font-family: "Inter", "Segoe UI", sans-serif;
+    }
 
-    <div class="page">
-      <aside class="sidebar">
-        <div class="sidebar__brand">
-          <div class="sidebar__logo" aria-hidden="true">🛰️</div>
-          <div>
-            <p class="sidebar__title">VulnVision</p>
-            <p class="sidebar__subtitle">Passive Recon Intelligence</p>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      inset: -40vh -40vw;
+      background: radial-gradient(circle at 20% 20%, rgba(41, 255, 212, 0.18), transparent 60%),
+        radial-gradient(circle at 80% 40%, rgba(90, 125, 255, 0.16), transparent 55%),
+        radial-gradient(circle at 50% 80%, rgba(255, 79, 216, 0.12), transparent 60%);
+      z-index: -2;
+      animation: drift 22s ease-in-out infinite alternate;
+      filter: blur(0.5px);
+    }
+
+    body::after {
+      animation-duration: 28s;
+      opacity: 0.7;
+    }
+
+    @keyframes drift {
+      0% { transform: translate3d(-4%, -3%, 0) scale(1.05); }
+      100% { transform: translate3d(4%, 3%, 0) scale(1.08); }
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      backdrop-filter: blur(12px);
+      background: rgba(5, 10, 24, 0.72);
+      border-bottom: 1px solid rgba(90, 125, 255, 0.25);
+      z-index: 10;
+    }
+
+    .nav {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.2rem 2rem;
+    }
+
+    .nav__brand {
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--cyan);
+    }
+
+    .nav__links {
+      display: flex;
+      gap: 1.8rem;
+      font-size: 0.95rem;
+    }
+
+    .nav__links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      position: relative;
+      transition: color 0.2s ease;
+    }
+
+    .nav__links a::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: -6px;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, var(--cyan), var(--magenta));
+      transform: scaleX(0);
+      transform-origin: right;
+      transition: transform 0.25s ease;
+    }
+
+    .nav__links a:hover {
+      color: var(--text);
+    }
+
+    .nav__links a:hover::after {
+      transform: scaleX(1);
+      transform-origin: left;
+    }
+
+    .hero {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 6rem 2rem 5rem;
+      display: grid;
+      gap: 3rem;
+      align-items: center;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+
+    .hero__badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.85rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 0.6rem 1.2rem;
+      border: 1px solid rgba(41, 255, 212, 0.4);
+      border-radius: 999px;
+      background: rgba(5, 12, 35, 0.8);
+      animation: glow 2.4s ease-in-out infinite;
+    }
+
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 0 0 rgba(41, 255, 212, 0.0); }
+      50% { box-shadow: 0 0 24px rgba(41, 255, 212, 0.35); }
+    }
+
+    h1 {
+      font-size: clamp(2.8rem, 6vw, 4.2rem);
+      margin: 1rem 0 1.5rem;
+      line-height: 1.07;
+    }
+
+    p {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .cta-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.2rem;
+      margin-top: 2.2rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.95rem 1.9rem;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 18px 32px rgba(18, 25, 45, 0.45);
+    }
+
+    .btn--accent {
+      background: linear-gradient(135deg, var(--cyan), var(--blue));
+      color: var(--bg);
+    }
+
+    .btn--secondary {
+      background: rgba(10, 20, 40, 0.85);
+      border: 1px solid rgba(90, 125, 255, 0.45);
+      color: var(--text);
+    }
+
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 22px 40px rgba(12, 18, 40, 0.55);
+    }
+
+    main {
+      display: flex;
+      flex-direction: column;
+      gap: 6rem;
+      padding: 0 2rem 6rem;
+    }
+
+    section {
+      max-width: 1140px;
+      margin: 0 auto;
+      background: rgba(8, 14, 32, 0.78);
+      border: 1px solid rgba(90, 125, 255, 0.14);
+      border-radius: 20px;
+      padding: 3.5rem;
+      box-shadow: 0 26px 60px var(--shadow);
+    }
+
+    section h2 {
+      margin-top: 0;
+      font-size: 2.2rem;
+      letter-spacing: -0.01em;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.6rem;
+      margin-top: 2rem;
+    }
+
+    .feature-card {
+      padding: 1.8rem;
+      background: rgba(10, 18, 40, 0.92);
+      border: 1px solid rgba(41, 255, 212, 0.18);
+      border-radius: 16px;
+      box-shadow: inset 0 0 0 1px rgba(41, 255, 212, 0.06);
+      transition: transform 0.25s ease, border-color 0.25s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(255, 79, 216, 0.35);
+    }
+
+    .feature-card h3 {
+      margin-top: 0;
+      font-size: 1.2rem;
+      margin-bottom: 0.6rem;
+    }
+
+    ul {
+      padding-left: 1.2rem;
+    }
+
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 2.2rem;
+      font-size: 0.98rem;
+    }
+
+    .compare-table th,
+    .compare-table td {
+      padding: 0.95rem 1.2rem;
+      border: 1px solid rgba(90, 125, 255, 0.22);
+      text-align: left;
+    }
+
+    .compare-table th {
+      background: rgba(11, 20, 45, 0.9);
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 0.8rem;
+    }
+
+    .cta-banner {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+      margin-top: 2.6rem;
+    }
+
+    footer {
+      padding: 2.2rem;
+      text-align: center;
+      background: rgba(5, 9, 20, 0.85);
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      border-top: 1px solid rgba(90, 125, 255, 0.18);
+    }
+
+    @media (max-width: 768px) {
+      .nav__links {
+        display: none;
+      }
+
+      section {
+        padding: 2.4rem 1.8rem;
+      }
+
+      .hero {
+        padding: 5rem 1.6rem 4rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav class="nav">
+      <div class="nav__brand">VulnVision</div>
+      <div class="nav__links">
+        <a href="#what">What Is It</a>
+        <a href="#features">Features</a>
+        <a href="#architecture">How It Works</a>
+        <a href="#demo">Demo</a>
+        <a href="#why">Why We Win</a>
+        <a href="#status">API Status</a>
+      </div>
+    </nav>
+  </header>
+
+  <section class="hero" id="top">
+    <div>
+      <div class="hero__badge">Passive recon · Production hardened · Judge ready</div>
+      <h1>Passive Reconnaissance Intelligence for the Modern Attack Surface</h1>
+      <p>
+        VulnVision unifies passive security reconnaissance into a single, beautiful experience. Run a scan, grade every
+        security header, interrogate TLS posture, expose risky endpoints, and deliver a polished analyst report in under a minute.
+      </p>
+      <div class="cta-group">
+        <a class="btn btn--accent" href="https://sr-857.github.io/vulnvision/" target="_blank" rel="noopener">Launch Dashboard</a>
+        <a class="btn btn--secondary" href="docs/examples/demo_report.html" target="_blank" rel="noopener">View Sample Report</a>
+      </div>
+    </div>
+    <div>
+      <section style="background: rgba(10, 18, 40, 0.92); border: 1px solid rgba(90, 125, 255, 0.32); border-radius: 18px; padding: 2.4rem; box-shadow: 0 24px 54px rgba(5, 10, 28, 0.55);">
+        <h2 style="margin-top:0;font-size:1.6rem;">Snapshot Metrics</h2>
+        <p style="margin-bottom:1.6rem;">Built for hackathons, tuned for live demos.</p>
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.2rem;">
+          <div style="background:rgba(9,16,34,0.9);border-radius:14px;padding:1.1rem 1.4rem;border:1px solid rgba(41,255,212,0.2);">
+            <div style="font-size:2rem;font-weight:600;color:var(--cyan);">30+</div>
+            <div style="color:var(--text-muted);font-size:0.9rem;">High-signal exposure checks</div>
+          </div>
+          <div style="background:rgba(9,16,34,0.9);border-radius:14px;padding:1.1rem 1.4rem;border:1px solid rgba(90,125,255,0.2);">
+            <div style="font-size:2rem;font-weight:600;color:var(--blue);">120s</div>
+            <div style="color:var(--text-muted);font-size:0.9rem;">Adaptive caching window</div>
+          </div>
+          <div style="background:rgba(9,16,34,0.9);border-radius:14px;padding:1.1rem 1.4rem;border:1px solid rgba(255,79,216,0.2);">
+            <div style="font-size:2rem;font-weight:600;color:var(--magenta);">∞</div>
+            <div style="color:var(--text-muted);font-size:0.9rem;">Passive-only, safe for demos</div>
+          </div>
+          <div style="background:rgba(9,16,34,0.9);border-radius:14px;padding:1.1rem 1.4rem;border:1px solid rgba(41,255,212,0.2);">
+            <div style="font-size:2rem;font-weight:600;color:var(--cyan);">45s</div>
+            <div style="color:var(--text-muted);font-size:0.9rem;">Average scan-to-report time</div>
           </div>
         </div>
-
-        <nav class="sidebar__nav" aria-label="Primary views">
-          <div class="nav-group">
-            <span class="nav-group__label">Overview</span>
-            <a class="nav-item nav-item--active" href="#hero"><span class="nav-item__icon">⚡</span>Command Center</a>
-            <a class="nav-item" href="#dashboard"><span class="nav-item__icon">📊</span>Dashboard</a>
-            <a class="nav-item" href="#assets"><span class="nav-item__icon">🎁</span>Demo Toolkit</a>
-          </div>
-          <div class="nav-group">
-            <span class="nav-group__label">Resources</span>
-            <a class="nav-item" href="../examples/demo_report.html" target="_blank"><span class="nav-item__icon">📄</span>Sample Report</a>
-            <a class="nav-item" href="https://github.com/sr-857/vulnvision" target="_blank"><span class="nav-item__icon">💻</span>Repository</a>
-            <a class="nav-item" href="https://github.com/sr-857/vulnvision/releases" target="_blank"><span class="nav-item__icon">🚀</span>Releases</a>
-          </div>
-        </nav>
-      </aside>
-
-      <main class="main">
-        <header class="main__hero" id="hero">
-          <div class="hero__content">
-            <div class="hero__badge">Passive recon · No intrusive traffic · Analyst ready</div>
-            <h1>Passive Recon Control Center</h1>
-            <p>
-              Lift your recon posture with VulnVision. Ingest a target once, fingerprint technology, grade browser defenses,
-              inspect TLS health, surface exposures, and ship executive-ready HTML reports in under a minute.
-            </p>
-            <div class="hero__cta">
-              <a class="btn btn--accent" href="#dashboard">Launch interactive walkthrough</a>
-              <a class="btn" href="../examples/demo_report.html" target="_blank">View sample report</a>
-            </div>
-          </div>
-          <div class="hero__metrics" aria-label="Recon highlights">
-            <article>
-              <h3>Targets profiled</h3>
-              <strong data-field="metric-targets">18</strong>
-              <span>Passive scans this quarter</span>
-            </article>
-            <article>
-              <h3>Headers graded</h3>
-              <strong data-field="metric-headers">108</strong>
-              <span>Browser defenses per scan</span>
-            </article>
-            <article>
-              <h3>Exposures surfaced</h3>
-              <strong data-field="metric-exposures">6</strong>
-              <span>High-signal endpoints detected</span>
-            </article>
-          </div>
-        </header>
-
-        <section class="dashboard" id="dashboard">
-          <h2 class="dashboard__title">Reconnaissance Dashboard</h2>
-          <p class="dashboard__subtitle">Live intelligence from passive scans—technology fingerprints, security posture, TLS health, and exposure highlights.</p>
-
-          <form class="scan-form" data-action="scan-form">
-            <div class="scan-form__grid">
-              <label for="api-base">API Endpoint</label>
-              <input
-                id="api-base"
-                type="url"
-                placeholder="https://demo.vulnvision.dev"
-                data-field="api-input"
-                autocomplete="off"
-              />
-            </div>
-            <div class="scan-form__grid">
-              <label for="scan-target">Target URL</label>
-              <div class="scan-form__row">
-                <input
-                  id="scan-target"
-                  type="url"
-                  required
-                  value="https://demo.owasp-juice.shop"
-                  data-field="target-input"
-                  placeholder="https://example.com"
-                />
-                <button class="btn btn--accent" type="submit">Run live scan</button>
-              </div>
-            </div>
-            <p class="scan-form__status" data-field="scan-status">Demo mode using sample data. Provide an API endpoint to run live scans.</p>
-          </form>
-
-          <div class="dashboard__grid">
-            <article class="card card--risk" id="card-risk">
-              <header class="card__header">
-                <h3>Risk Snapshot</h3>
-                <span class="card__badge" data-field="risk-badge">Medium</span>
-              </header>
-              <div class="card__body">
-                <div class="card__content" data-field="risk"></div>
-                <canvas class="sparkline" id="riskChart" aria-hidden="true"></canvas>
-              </div>
-            </article>
-
-            <article class="card card--tech" id="card-tech">
-              <header class="card__header">
-                <h3>Technology Stack</h3>
-                <span class="card__count" data-field="tech-count">3 detected</span>
-              </header>
-              <div class="card__body">
-                <ul class="tech-list" data-field="tech"></ul>
-                <canvas class="sparkline" id="techChart" aria-hidden="true"></canvas>
-              </div>
-            </article>
-
-            <article class="card card--tls card--glow card--shadow" id="card-tls">
-              <header class="card__header">
-                <h3>TLS Certificate</h3>
-                <span class="card__status" data-field="tls-status">Expires soon</span>
-              </header>
-              <div class="card__body">
-                <dl class="cert-details" data-field="tls"></dl>
-                <canvas class="sparkline" id="tlsChart" aria-hidden="true"></canvas>
-              </div>
-            </article>
-
-            <article class="card card--exposures" id="card-exposures">
-              <header class="card__header">
-                <h3>Passive Exposures</h3>
-                <span class="card__count" data-field="exposure-count">3 found</span>
-              </header>
-              <div class="card__body">
-                <ul class="exposure-list" data-field="exposure-highlights"></ul>
-                <canvas class="sparkline" id="exposureChart" aria-hidden="true"></canvas>
-              </div>
-            </article>
-          </div>
-
-          <div class="tables">
-            <article class="panel panel--wide" id="technology">
-              <header>
-                <h2>Technology Details</h2>
-                <span>Confidence levels and passive evidence.</span>
-              </header>
-              <div class="table-wrapper">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Technology</th>
-                      <th>Confidence</th>
-                      <th>Evidence</th>
-                    </tr>
-                  </thead>
-                  <tbody data-field="tech-table"></tbody>
-                </table>
-              </div>
-            </article>
-            <article class="panel panel--wide">
-              <header>
-                <h2>Security Headers</h2>
-                <span>Presence, quality, and remediation hints.</span>
-              </header>
-              <div class="table-wrapper">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Header</th>
-                      <th>Status</th>
-                      <th>Value</th>
-                      <th>Note</th>
-                    </tr>
-                  </thead>
-                  <tbody data-field="headers"></tbody>
-                </table>
-              </div>
-            </article>
-
-            <article class="panel panel--wide">
-              <header>
-                <h2>Passive Exposure Log</h2>
-                <span>Endpoints discovered during passive reconnaissance.</span>
-              </header>
-              <div class="table-wrapper">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Path</th>
-                      <th>Status</th>
-                      <th>Risk</th>
-                      <th>Detail</th>
-                    </tr>
-                  </thead>
-                  <tbody data-field="exposures"></tbody>
-                </table>
-              </div>
-            </article>
-
-            <article class="panel panel--wide">
-              <header>
-                <h2>Response Headers</h2>
-                <span>Raw snapshot of the target exchange.</span>
-              </header>
-              <div class="table-wrapper">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Header</th>
-                      <th>Value</th>
-                    </tr>
-                  </thead>
-                  <tbody data-field="response"></tbody>
-                </table>
-              </div>
-            </article>
-          </div>
-        </section>
-
-        <section class="assets" id="assets">
-          <div class="assets__intro">
-            <h2>Demo toolkit</h2>
-            <p>Everything you need to showcase VulnVision in 60 seconds.</p>
-          </div>
-          <div class="assets__grid">
-            <article class="asset-card">
-              <header>
-                <h3>Sample HTML report</h3>
-                <p><a href="../examples/demo_report.html" target="_blank">examples/demo_report.html →</a></p>
-              </header>
-              <p>Evidence-ready export that mirrors the live dashboard. Attach to hackathon submissions or client briefings.</p>
-              <footer>Generated via `/report` endpoint.</footer>
-            </article>
-            <article class="asset-card">
-              <header>
-                <h3>Docker demo stack</h3>
-                <p><code>./scripts/demo.sh</code></p>
-              </header>
-              <p>Launches FastAPI backend + static dashboard instantly. Perfect for conference Wi-Fi or borrowed laptops.</p>
-              <footer>Frontend :8080 · Backend :8000 · `docker compose down` to stop</footer>
-            </article>
-            <article class="asset-card">
-              <header>
-                <h3>Live scan checklist</h3>
-                <p>60-second walkthrough</p>
-              </header>
-              <p>Run `uvicorn`, open dashboard, scan OWASP Juice Shop, narrate findings, export HTML report.</p>
-              <footer>See README Quickstart for full script.</footer>
-            </article>
-          </div>
-        </section>
-
-        <footer class="footer">
-          <p>© <span data-field="year"></span> VulnVision · Passive Recon Intelligence.</p>
-          <small>MIT Licensed · Zero intrusive network traffic · Analyst approved.</small>
-        </footer>
-      </main>
+      </section>
     </div>
+  </section>
 
-    <script>
-      const SAMPLE_DATA = {
-        target: "https://demo.owasp-juice.shop",
-        scanned_at: new Date().toISOString(),
-        metrics: { targets: 18, headers: 108, exposures: 6 },
-        risk: {
-          level: "Medium",
-          reasons: [
-            "Missing security header: Content-Security-Policy",
-            "TLS certificate expires within 30 days",
-            "robots.txt reveals admin endpoints",
-          ],
-        },
-        tech_stack: [
-          { name: "Angular", confidence: "High", evidence: "script src=/main-es2015.js" },
-          { name: "Express.js", confidence: "Medium", evidence: "x-powered-by: Express" },
-          { name: "Cloudflare", confidence: "Medium", evidence: "server: cloudflare" },
-        ],
-        tls: {
-          Subject: "CN=demo.owasp-juice.shop",
-          Issuer: "Cloudflare Inc ECC CA-3",
-          Validity: "2025-01-05 → 2025-04-05",
-          "Days Remaining": 32,
-          Key: "EllipticCurvePublicKey (256 bits)",
-          Signature: "ecdsa-with-SHA256",
-          findings: ["Certificate expires within 45 days"],
-        },
-        exposures: [
-          { path: "/robots.txt", status: "200", risk: "Medium", detail: "robots.txt reveals sensitive paths" },
-          { path: "/admin", status: "302", risk: "Medium", detail: "Admin portal accessible" },
-          { path: "/.git/", status: "403", risk: "Low", detail: "Path protected but accessible" },
-        ],
-        headers: [
-          { header: "Content-Security-Policy", status: "Missing", value: "—", note: "Header not present" },
-          { header: "X-Frame-Options", status: "Needs review", value: "ALLOWALL", note: "Unexpected value" },
-          { header: "X-Content-Type-Options", status: "Secure", value: "nosniff", note: "OK" },
-          { header: "Strict-Transport-Security", status: "Secure", value: "max-age=31536000; includeSubDomains", note: "OK" },
-          { header: "Referrer-Policy", status: "Missing", value: "—", note: "Header not present" },
-          { header: "Permissions-Policy", status: "Missing", value: "—", note: "Define policies for sensors" },
-        ],
-        responseHeaders: {
-          "content-type": "text/html; charset=utf-8",
-          "x-powered-by": "Express",
-          server: "cloudflare",
-          "cache-control": "public, max-age=0, must-revalidate",
-        },
-      };
+  <main>
+    <section id="what">
+      <h2>What Is VulnVision?</h2>
+      <p>
+        VulnVision is a passive reconnaissance command center. It fingerprints technology stacks, evaluates security controls,
+        surfaces exposed services, and produces analyst-ready intelligence without sending intrusive payloads. Built for
+        hackathons, tuned for production, it delivers the clarity judges expect from a final-round demo.
+      </p>
+    </section>
 
-      const background = document.getElementById("background");
-      const ctx = background.getContext("2d");
-      const charts = {};
+    <section id="features">
+      <h2>Mission-Critical Features</h2>
+      <div class="feature-grid">
+        <article class="feature-card">
+          <h3>🔍 Passive Recon</h3>
+          <p>Read-only harvesting of headers, TLS metadata, and public assets — safe on any stage.</p>
+        </article>
+        <article class="feature-card">
+          <h3>🧩 Tech Fingerprinting</h3>
+          <p>DOM signatures, response headers, cookies, and favicon hashing for accurate platform insights.</p>
+        </article>
+        <article class="feature-card">
+          <h3>🔐 TLS Intelligence</h3>
+          <p>Certificate issuer, SANs, key size, signature algorithms, expiry countdown, and instant findings.</p>
+        </article>
+        <article class="feature-card">
+          <h3>⚠️ Exposure Sweeps</h3>
+          <p>Over 30 high-signal endpoints including git leaks, config backups, dashboards, and status consoles.</p>
+        </article>
+        <article class="feature-card">
+          <h3>📊 Risk Scoring</h3>
+          <p>Weighted scoring across headers, TLS, and exposures to focus the conversation on impact.</p>
+        </article>
+        <article class="feature-card">
+          <h3>📄 HTML Report Export</h3>
+          <p>One-click, branded report that mirrors the dashboard for executive handoffs.</p>
+        </article>
+      </div>
+    </section>
 
-      function resizeBackground() {
-        background.width = window.innerWidth;
-        background.height = window.innerHeight;
-        renderBackground();
-      }
+    <section id="architecture">
+      <h2>How It Works</h2>
+      <p>The platform runs a lightweight, distributed architecture designed for reliability and speed:</p>
+      <ul>
+        <li>Static frontend hosted on GitHub Pages delivers instant global access.</li>
+        <li>FastAPI backend on Render orchestrates header audits, TLS inspection, tech detection, and exposure sweeps.</li>
+        <li>Asynchronous scanners execute concurrently with caching and rate limiting for predictable demos.</li>
+        <li>Normalized JSON contract powers the dashboard and report generator.</li>
+        <li>Report endpoint renders a polished HTML dossier ready for judges and stakeholders.</li>
+      </ul>
+      <div class="cta-banner">
+        <a class="btn btn--accent" href="https://vulnvision.onrender.com/docs" target="_blank" rel="noopener">View API Docs</a>
+        <a class="btn btn--secondary" href="#why">See Why We Win</a>
+      </div>
+    </section>
 
-      function renderBackground() {
-        const gradient = ctx.createRadialGradient(
-          background.width * 0.9,
-          background.height * 0.15,
-          background.width * 0.2,
-          background.width * 0.5,
-          background.height * 0.65,
-          background.width
-        );
-        gradient.addColorStop(0, "rgba(18, 200, 255, 0.24)");
-        gradient.addColorStop(0.4, "rgba(41, 255, 212, 0.18)");
-        gradient.addColorStop(1, "rgba(5, 9, 28, 0.96)");
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, background.width, background.height);
+    <section id="demo">
+      <h2>Live Demo</h2>
+      <p>Everything is live today. Launch the dashboard, scan a target, and download the report without installing anything.</p>
+      <div class="cta-banner">
+        <a class="btn btn--accent" href="https://sr-857.github.io/vulnvision/" target="_blank" rel="noopener">Launch the Live Dashboard</a>
+        <a class="btn btn--secondary" href="docs/examples/demo_report.html" target="_blank" rel="noopener">Download Sample Report</a>
+      </div>
+    </section>
 
-        ctx.strokeStyle = "rgba(90, 150, 255, 0.14)";
-        ctx.lineWidth = 1;
-        for (let i = 0; i < 24; i++) {
-          ctx.beginPath();
-          ctx.arc(
-            Math.random() * background.width,
-            Math.random() * background.height,
-            Math.random() * 160 + 80,
-            0,
-            Math.PI * 2
-          );
-          ctx.stroke();
-        }
-      }
+    <section id="report">
+      <h2>Sample Report</h2>
+      <p>Review the exact HTML dossier delivered after a scan. It mirrors the dashboard layout and is optimized for executive handoffs.</p>
+      <div class="cta-banner">
+        <a class="btn btn--accent" href="docs/examples/demo_report.html" target="_blank" rel="noopener">Open Sample Report</a>
+      </div>
+    </section>
 
-      function renderData(data) {
-        document.querySelector("[data-field=year]").textContent = new Date().getFullYear();
+    <section id="why">
+      <h2>Why VulnVision Wins Hackathons</h2>
+      <p>Judges expect a cohesive story. VulnVision combines security depth with premium product polish.</p>
+      <ul>
+        <li>End-to-end delivery: responsive frontend, robust API, and exportable intelligence.</li>
+        <li>Security expertise on display with TLS analytics, exposure sweeps, and passive scanning discipline.</li>
+        <li>Design-first experience with a cyber aesthetic, animated interactions, and persuasive storytelling.</li>
+        <li>Battle-tested stability thanks to caching, rate limiting, and independent external validation workflows.</li>
+      </ul>
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>VulnVision</th>
+            <th>Wappalyzer</th>
+            <th>Nmap (Passive)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Security Headers Audit</td>
+            <td>✔ Comprehensive + guidance</td>
+            <td>✖ Not provided</td>
+            <td>✖ Not available</td>
+          </tr>
+          <tr>
+            <td>TLS Certificate Intelligence</td>
+            <td>✔ Full metadata, expiry, SANs</td>
+            <td>✖ Limited</td>
+            <td>✔ Partial</td>
+          </tr>
+          <tr>
+            <td>Exposure Detection</td>
+            <td>✔ 30+ curated paths</td>
+            <td>✖ Not included</td>
+            <td>✔ Manual scripts</td>
+          </tr>
+          <tr>
+            <td>HTML Report Export</td>
+            <td>✔ Branded, judge-ready</td>
+            <td>✖</td>
+            <td>✖</td>
+          </tr>
+          <tr>
+            <td>Passive by Design</td>
+            <td>✔ Guaranteed</td>
+            <td>✔</td>
+            <td>✔</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
 
-        const metrics = data.metrics || {};
-        document.querySelector("[data-field=metric-targets]").textContent = metrics.targets ?? "—";
-        document.querySelector("[data-field=metric-headers]").textContent = metrics.headers ?? "—";
-        document.querySelector("[data-field=metric-exposures]").textContent = metrics.exposures ?? data.exposures?.length ?? "—";
+    <section id="story">
+      <h2>The Narrative Judges Remember</h2>
+      <p>Security visibility should be effortless, beautiful, and responsible. VulnVision reframes reconnaissance as a product experience, not a script.</p>
+      <ul>
+        <li>🚀 Instant value: paste a target, get risk intelligence in seconds.</li>
+        <li>🎯 Executive clarity: curated findings with reasons anyone can understand.</li>
+        <li>⚡ Zero friction: deployed today, zero setup, shareable output.</li>
+        <li>📄 Trustworthy reporting: HTML export with the same polish as the dashboard.</li>
+      </ul>
+    </section>
 
-        const riskBadgeEl = document.querySelector("[data-field=risk-badge]");
-        riskBadgeEl.textContent = data.risk.level;
-        riskBadgeEl.className = `card__badge card__badge--${(data.risk.level || "unknown").toLowerCase()}`;
+    <section id="status">
+      <h2>API Status</h2>
+      <p>The backend is deployed on Render and reachable worldwide. Rate limiting and caching keep responses fast for every judge.</p>
+      <div class="cta-banner">
+        <a class="btn btn--accent" href="https://vulnvision.onrender.com" target="_blank" rel="noopener">View API Status</a>
+        <a class="btn btn--secondary" href="https://vulnvision.onrender.com/docs" target="_blank" rel="noopener">Open Interactive Docs</a>
+      </div>
+    </section>
+  </main>
 
-        const riskNode = document.querySelector("[data-field=risk]");
-        riskNode.innerHTML = "";
-        const list = document.createElement("ul");
-        list.className = "risk-list";
-        (data.risk.reasons || []).forEach(reason => {
-          const li = document.createElement("li");
-          li.textContent = reason;
-          list.appendChild(li);
-        });
-        riskNode.appendChild(list);
-
-        document.querySelector("[data-field=tech-count]").textContent = `${data.tech_stack.length} detected`;
-        document.querySelector("[data-field=exposure-count]").textContent = `${data.exposures.length} found`;
-        document.querySelector("[data-field=tls-status]").textContent = data.tls.findings?.[0] || "Valid";
-
-        const techList = document.querySelector("[data-field=tech]");
-        techList.innerHTML = "";
-        const techTable = document.querySelector("[data-field=tech-table]");
-        techTable.innerHTML = "";
-        data.tech_stack.forEach(tech => {
-          const pill = document.createElement("li");
-          pill.innerHTML = `<strong>${tech.name}</strong><small>${tech.confidence} · ${tech.evidence}</small>`;
-          techList.appendChild(pill);
-
-          const row = document.createElement("tr");
-          row.innerHTML = `<td>${tech.name}</td><td>${tech.confidence}</td><td><code>${tech.evidence}</code></td>`;
-          techTable.appendChild(row);
-        });
-
-        const tlsDef = document.querySelector("[data-field=tls]");
-        tlsDef.innerHTML = "";
-        Object.entries(data.tls)
-          .filter(([key]) => key !== "findings")
-          .forEach(([label, value]) => {
-            const dt = document.createElement("dt");
-            dt.textContent = label;
-            const dd = document.createElement("dd");
-            dd.textContent = value;
-            tlsDef.appendChild(dt);
-            tlsDef.appendChild(dd);
-          });
-
-        const exposureHighlightList = document.querySelector("[data-field=exposure-highlights]");
-        exposureHighlightList.innerHTML = "";
-        const exposuresTable = document.querySelector("[data-field=exposures]");
-        exposuresTable.innerHTML = "";
-        data.exposures.forEach(exposure => {
-          const pill = document.createElement("li");
-          pill.innerHTML = `<strong>${exposure.path}</strong><small>${exposure.risk} risk • ${exposure.detail}</small>`;
-          exposureHighlightList.appendChild(pill);
-
-          const row = document.createElement("tr");
-          row.innerHTML = `
-            <td>${exposure.path}</td>
-            <td>${exposure.status}</td>
-            <td><span class="pill pill--${exposure.risk.toLowerCase()}">${exposure.risk}</span></td>
-            <td>${exposure.detail}</td>
-          `;
-          exposuresTable.appendChild(row);
-        });
-
-        const headersTable = document.querySelector("[data-field=headers]");
-        headersTable.innerHTML = "";
-        data.headers.forEach(header => {
-          const row = document.createElement("tr");
-          row.innerHTML = `
-            <td>${header.header}</td>
-            <td><span class="pill pill--${header.status.toLowerCase().replace(/\s/g, '-')}">${header.status}</span></td>
-            <td>${header.value}</td>
-            <td>${header.note}</td>
-          `;
-          headersTable.appendChild(row);
-        });
-
-        const responseTable = document.querySelector("[data-field=response]");
-        responseTable.innerHTML = "";
-        Object.entries(data.responseHeaders || {}).forEach(([name, value]) => {
-          const row = document.createElement("tr");
-          row.innerHTML = `<td>${name}</td><td><code>${value}</code></td>`;
-          responseTable.appendChild(row);
-        });
-
-        renderCharts(data);
-      }
-
-      function computeHeaderCounts(headers) {
-        const counts = { secure: 0, needs_review: 0, missing: 0 };
-        headers.forEach(header => {
-          const key = header.status_original || header.status || "";
-          const normalized = key.toLowerCase().replace(/\s+/g, "_");
-          if (normalized in counts) {
-            counts[normalized] += 1;
-          }
-        });
-        return counts;
-      }
-
-      function computeExposureCounts(exposures) {
-        const counts = { High: 0, Medium: 0, Low: 0 };
-        exposures.forEach(exposure => {
-          const key = (exposure.risk || "").toLowerCase();
-          const title = key.charAt(0).toUpperCase() + key.slice(1);
-          if (title in counts) {
-            counts[title] += 1;
-          }
-        });
-        return counts;
-      }
-
-      function computeConfidenceCounts(stack) {
-        const counts = { High: 0, Medium: 0, Low: 0 };
-        stack.forEach(tech => {
-          const key = (tech.confidence || "").toLowerCase();
-          const title = key.charAt(0).toUpperCase() + key.slice(1);
-          if (title in counts) {
-            counts[title] += 1;
-          }
-        });
-        return counts;
-      }
-
-      function renderCharts(data) {
-        if (!window.Chart) {
-          return;
-        }
-
-        if (!renderCharts.initialized) {
-          Chart.defaults.color = "#dbe4ff";
-          Chart.defaults.font.family = "Inter, system-ui, sans-serif";
-          Chart.defaults.font.weight = 500;
-          renderCharts.initialized = true;
-        }
-
-        const riskCtx = document.getElementById("riskChart");
-        if (riskCtx) {
-          charts.risk?.destroy();
-          const headerCounts = computeHeaderCounts(data.headers);
-          charts.risk = new Chart(riskCtx, {
-            type: "doughnut",
-            data: {
-              labels: ["Secure", "Needs review", "Missing"],
-              datasets: [
-                {
-                  data: [headerCounts.secure, headerCounts.needs_review, headerCounts.missing],
-                  backgroundColor: ["#53fbb3", "#ffc861", "#ff6f92"],
-                  borderWidth: 0,
-                },
-              ],
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              cutout: "68%",
-              plugins: { legend: { display: false }, tooltip: { enabled: true } },
-            },
-          });
-        }
-
-        const exposureCtx = document.getElementById("exposureChart");
-        if (exposureCtx) {
-          charts.exposures?.destroy();
-          const exposureCounts = computeExposureCounts(data.exposures);
-          charts.exposures = new Chart(exposureCtx, {
-            type: "bar",
-            data: {
-              labels: ["High", "Medium", "Low"],
-              datasets: [
-                {
-                  data: [exposureCounts.High, exposureCounts.Medium, exposureCounts.Low],
-                  backgroundColor: ["#ff6f92", "#ffc861", "#53fbb3"],
-                  borderRadius: 12,
-                },
-              ],
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              scales: {
-                x: { display: false, stacked: true },
-                y: { display: false, beginAtZero: true },
-              },
-              plugins: { legend: { display: false }, tooltip: { enabled: true } },
-            },
-          });
-        }
-
-        const techCtx = document.getElementById("techChart");
-        if (techCtx) {
-          charts.tech?.destroy();
-          const confidenceCounts = computeConfidenceCounts(data.tech_stack);
-          charts.tech = new Chart(techCtx, {
-            type: "line",
-            data: {
-              labels: ["Low", "Medium", "High"],
-              datasets: [
-                {
-                  data: [confidenceCounts.Low, confidenceCounts.Medium, confidenceCounts.High],
-                  borderColor: "#12c8ff",
-                  backgroundColor: "rgba(18, 200, 255, 0.25)",
-                  tension: 0.4,
-                  fill: true,
-                },
-              ],
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              scales: {
-                x: { display: false },
-                y: { display: false, beginAtZero: true },
-              },
-              plugins: { legend: { display: false }, tooltip: { enabled: true } },
-            },
-          });
-        }
-
-        const tlsCtx = document.getElementById("tlsChart");
-        if (tlsCtx) {
-          charts.tls?.destroy();
-          const daysRemaining = Number.parseInt(data.tls["Days Remaining"], 10);
-          const normalizedDays = Number.isFinite(daysRemaining) ? Math.max(daysRemaining, 0) : 0;
-          const cap = Math.max(normalizedDays, 90);
-          charts.tls = new Chart(tlsCtx, {
-            type: "doughnut",
-            data: {
-              labels: ["Days remaining", "Until 0"],
-              datasets: [
-                {
-                  data: [normalizedDays, Math.max(cap - normalizedDays, 0)],
-                  backgroundColor: ["#53fbb3", "rgba(18, 200, 255, 0.18)"],
-                  borderWidth: 0,
-                },
-              ],
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              cutout: "72%",
-              plugins: { legend: { display: false }, tooltip: { enabled: true } },
-            },
-          });
-        }
-      }
-
-      function transformApiResult(result) {
-        const statusMap = {
-          missing: "Missing",
-          needs_review: "Needs review",
-          secure: "Secure",
-        };
-
-        const confidenceTitle = confidence => {
-          const value = (confidence || "Unknown").toString();
-          return value.charAt(0).toUpperCase() + value.slice(1);
-        };
-
-        const summary = result.ssl?.summary || {};
-        const daysRemaining = summary.days_remaining ?? "—";
-        const validity = summary.not_before && summary.not_after
-          ? `${new Date(summary.not_before).toISOString().slice(0, 10)} → ${new Date(summary.not_after).toISOString().slice(0, 10)}`
-          : "—";
-
-        const tls = {
-          Subject: summary.subject || "—",
-          Issuer: summary.issuer || "—",
-          Validity: validity,
-          "Days Remaining": daysRemaining,
-          Key: summary.key_type
-            ? `${summary.key_type}${summary.key_size ? ` (${summary.key_size} bits)` : ""}`
-            : "—",
-          Signature: summary.signature_algorithm || "—",
-          findings: (result.ssl?.findings || []).map(finding => finding.message).filter(Boolean),
-        };
-
-        if (summary.san?.length) {
-          tls.SAN = summary.san.join(", ");
-        }
-
-        return {
-          target: result.target,
-          scanned_at: result.scanned_at,
-          metrics: SAMPLE_DATA.metrics,
-          risk: {
-            level: result.risk?.level || "Unknown",
-            reasons: result.risk?.reasons || ["No significant issues detected"],
-          },
-          tech_stack: (result.tech_stack || []).map(tech => ({
-            name: tech.name,
-            confidence: confidenceTitle(tech.confidence),
-            evidence: tech.evidence || "—",
-          })),
-          tls,
-          exposures: (result.exposures || []).map(exposure => ({
-            path: exposure.path || exposure.detail || "—",
-            status: exposure.status || "—",
-            risk: confidenceTitle(exposure.risk),
-            detail: exposure.detail || "",
-          })),
-          headers: (result.security_headers || []).map(header => {
-            const original = header.status || "";
-            const normalized = original.toLowerCase();
-            const status = statusMap[normalized] || confidenceTitle(original);
-            return {
-              header: header.header,
-              status,
-              status_original: original,
-              value: header.value ?? "—",
-              note: header.note ?? "",
-            };
-          }),
-          responseHeaders: result.response_headers || {},
-        };
-      }
-
-      document.addEventListener("DOMContentLoaded", () => {
-        resizeBackground();
-
-        const params = new URLSearchParams(window.location.search);
-        let apiBase = (window.VULNVISION_API_BASE || params.get("api") || "").trim();
-        apiBase = apiBase.replace(/\/$/, "");
-
-        const form = document.querySelector("[data-action=scan-form]");
-        const apiInput = document.querySelector("[data-field=api-input]");
-        const targetInput = document.querySelector("[data-field=target-input]");
-        const statusEl = document.querySelector("[data-field=scan-status]");
-
-        apiInput.value = apiBase;
-
-        renderData(SAMPLE_DATA);
-        statusEl.textContent = apiBase
-          ? `Attempting live scan via ${apiBase} …`
-          : "Demo mode using sample data. Provide an API endpoint to run live scans.";
-
-        async function runScan(target) {
-          if (!apiBase) {
-            statusEl.textContent = "No API endpoint configured. Showing sample data.";
-            renderData(SAMPLE_DATA);
-            return;
-          }
-
-          statusEl.textContent = `Scanning ${target} …`;
-          try {
-            const response = await fetch(`${apiBase}/scan`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ target }),
-            });
-
-            if (!response.ok) {
-              throw new Error(`HTTP ${response.status}`);
-            }
-
-            const payload = await response.json();
-            const transformed = transformApiResult(payload);
-            renderData(transformed);
-            statusEl.textContent = `Live scan complete • ${new Date(transformed.scanned_at).toLocaleString()}`;
-          } catch (error) {
-            console.error("Scan failed", error);
-            statusEl.textContent = `Scan failed (${error.message}). Showing sample data.`;
-            renderData(SAMPLE_DATA);
-          }
-        }
-
-        form.addEventListener("submit", event => {
-          event.preventDefault();
-          apiBase = (apiInput.value || "").trim().replace(/\/$/, "");
-          runScan(targetInput.value.trim());
-        });
-
-        if (apiBase) {
-          runScan(targetInput.value.trim());
-        }
-
-        window.addEventListener("resize", resizeBackground);
-      });
-    </script>
-  </body>
+  <footer>
+    © 2025 VulnVision · Passive Recon Intelligence Platform · Crafted for hackathon victories
+  </footer>
+</body>
 </html>
