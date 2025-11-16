@@ -25,13 +25,13 @@ VulnVision delivers a judge-ready passive reconnaissance experience: point the d
 
 ```mermaid
 flowchart LR
-    user([User]) --> ui[Frontend (HTML/CSS/JS)]
-    ui --> backend[FastAPI Backend]
+    user([User]) --> ui[Frontend]
+    ui --> backend(FastAPI Backend)
     backend --> headers[Header Audit]
     backend --> tls[TLS Inspection]
     backend --> tech[Tech Detection]
     backend --> exposures[Exposure Sweep]
-    backend --> report[Downloadable Report]
+    backend --> report([Downloadable Report])
     report --> user
 ```
 
