@@ -20,6 +20,14 @@ VulnVision delivers a judge-ready passive reconnaissance experience: point the d
 - **Rate limiting + caching** to keep the API responsive during demos
 - **HTML report** that mirrors the dashboard layout for handover
 
+## 🌐 Live Experience
+
+- **Dashboard:** [sr-857.github.io/vulnvision](https://sr-857.github.io/vulnvision/) — responsive landing + scan console with live API wiring.
+- **API Gateway:** [vulnvision.onrender.com](https://vulnvision.onrender.com/) — FastAPI service exposing `/scan` and `/report`, protected by caching and rate limiting.
+- **Sample Report:** [docs/examples/demo_report.html](docs/examples/demo_report.html) — downloadable HTML dossier mirroring the dashboard presentation.
+
+Launch the dashboard, trigger a scan, and hand off the report within 60 seconds — no local setup required.
+
 ## 🧩 Architecture Overview
 <img width="1236" height="924" alt="ChatGPT Image Nov 16, 2025, 10_16_19 AM" src="https://github.com/user-attachments/assets/c3b8d3d3-0aec-4c1f-9ca0-8b6b3c9a5856" />
 
