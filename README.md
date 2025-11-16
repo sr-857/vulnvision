@@ -20,9 +20,9 @@ VulnVision delivers a judge-ready passive reconnaissance experience: point the d
 - **Rate limiting + caching** to keep the API responsive during demos
 - **HTML report** that mirrors the dashboard layout for handover
 
-![Architecture](docs/assets/architecture.png)
+## 🧩 Architecture Overview
 
-> _Tip: drop a diagram at `docs/assets/architecture.png` (e.g., Excalidraw export) to visualise the pipeline above._
+![VulnVision Architecture](docs/assets/architecture.png)
 
 ---
 
