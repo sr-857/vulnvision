@@ -148,14 +148,13 @@ See `.github/workflows/ci.yml` for the current pipeline.
 
 ---
 
-## 🤝 Contributing / Hackathon Tips
+## 🤝 Contributing & Hackathon Checklist
 
-1. Generate new scans against `demo.owasp-juice.shop` for a full-stack showcase.
-2. Capture fresh dashboard and report screenshots into `docs/assets/screenshots/`.
-3. Export a sample report to `docs/examples/demo_report.html` for offline judging.
-4. Create a release tag (`git tag -a v1.0 -m "Hackathon release" && git push origin v1.0`) once you freeze the demo.
-
-PRs are welcome — just keep scans passive and respect rate limits.
+- **Showcase the feature depth:** Run live scans against `demo.owasp-juice.shop` to produce technology fingerprints, TLS insights, and exposure findings that exercise every panel.
+- **Refresh visual assets:** Capture updated dashboard and report screenshots, storing them in `docs/assets/screenshots/` for judge-ready collateral.
+- **Publish an offline sample:** Export a current HTML report to `docs/examples/demo_report.html` so the experience is reviewable without network access.
+- **Cut a release when stabilized:** Tag the frozen demo (`git tag -a v1.0 -m "Hackathon release" && git push origin v1.0`) to capture the final build.
+- **Stay within passive boundaries:** All scans should remain read-only and respect the baked-in rate limits; when submitting PRs, preserve that stance.
 
 ---
 
