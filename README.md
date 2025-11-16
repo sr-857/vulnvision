@@ -23,18 +23,6 @@ VulnVision delivers a judge-ready passive reconnaissance experience: point the d
 ## 🧩 Architecture Overview
 <img width="1236" height="924" alt="ChatGPT Image Nov 16, 2025, 10_16_19 AM" src="https://github.com/user-attachments/assets/c3b8d3d3-0aec-4c1f-9ca0-8b6b3c9a5856" />
 
-```mermaid
-flowchart LR
-    user([User]) --> ui[Frontend]
-    ui --> backend(FastAPI Backend)
-    backend --> headers[Header Audit]
-    backend --> tls[TLS Inspection]
-    backend --> tech[Tech Detection]
-    backend --> exposures[Exposure Sweep]
-    backend --> report([Downloadable Report])
-    report --> user
-```
-
 ---
 
 ## ⚡ Quick Start (Local)
