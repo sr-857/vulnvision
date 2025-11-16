@@ -214,6 +214,8 @@
 
     .hero {
       position: relative;
+      min-height: calc(100vh - 140px);
+      align-content: center;
     }
 
     .hero::before {
@@ -290,17 +292,17 @@
     main {
       display: flex;
       flex-direction: column;
-      gap: 6rem;
-      padding: 0 2rem 6rem;
+      gap: 5rem;
+      padding: 0 2.5vw 5rem;
     }
 
     section {
-      max-width: 1140px;
+      max-width: min(1120px, 92vw);
       margin: 0 auto;
       background: rgba(8, 14, 32, 0.78);
       border: 1px solid rgba(90, 125, 255, 0.14);
       border-radius: 20px;
-      padding: 3.5rem;
+      padding: clamp(2.6rem, 4vw, 3.5rem);
       box-shadow: 0 26px 60px var(--shadow);
     }
 
@@ -347,7 +349,7 @@
       width: 100%;
       border-collapse: collapse;
       margin-top: 2.2rem;
-      font-size: 0.98rem;
+      font-size: clamp(0.9rem, 1.8vw, 0.98rem);
     }
 
     .compare-table th,
@@ -402,12 +404,23 @@
         display: none;
       }
 
-      section {
-        padding: 2.4rem 1.8rem;
+      .hero {
+        padding: 4.6rem 1.6rem 3.6rem;
+        min-height: auto;
       }
 
-      .hero {
-        padding: 5rem 1.6rem 4rem;
+      .hero__metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      main {
+        gap: 4rem;
+        padding: 0 1.2rem 4rem;
+      }
+
+      section {
+        max-width: 100%;
+        padding: 2.4rem 1.8rem;
       }
     }
   </style>
