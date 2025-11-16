@@ -1,0 +1,27 @@
+name: External API Validation
+
+on:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Quick scan (example.com)
+        run: |
+          curl -sS -X POST "https://vulnvision.onrender.com/scan" \
+            -H "Content-Type: application/json" \
+            -d '{"target":"example.com"}' | jq '.'
+
+      - name: Noisy target (OWASP Juice Shop)
+        run: |
+          curl -sS -X POST "https://vulnvision.onrender.com/scan" \
+            -H "Content-Type: application/json" \
+            -d '{"target":"demo.owasp-juice.shop"}' | jq '.'
+
+      - name: Report generation smoke test
+        run: |
+          curl -sS -X POST "https://vulnvision.onrender.com/report" \
+            -H "Content-Type: application/json" \
+            -d '{"target":"example.com"}' -o example-report.html
+          test -s example-report.html
