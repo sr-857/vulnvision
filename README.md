@@ -22,8 +22,8 @@ VulnVision delivers a judge-ready passive reconnaissance experience: point the d
 
 ## 🌐 Live Experience
 
-- **Dashboard:** [sr-857.github.io/vulnvision](https://sr-857.github.io/vulnvision/) — responsive landing + scan console with live API wiring.
-- **Marketing Site:** [my-site-ddg6q6cw-subhajitroy857.wix-vibe.com](https://my-site-ddg6q6cw-subhajitroy857.wix-vibe.com/) — public-facing storytelling layer aligned with the demo brand.
+- **Primary Landing Site:** [my-site-ddg6q6cw-subhajitroy857.wix-vibe.com](https://my-site-ddg6q6cw-subhajitroy857.wix-vibe.com/) — full marketing narrative and judge-facing entry point.
+- **Product Dashboard:** [sr-857.github.io/vulnvision](https://sr-857.github.io/vulnvision/) — interactive scan console with live API wiring.
 - **API Gateway:** [vulnvision.onrender.com](https://vulnvision.onrender.com/) — FastAPI service exposing `/scan` and `/report`, protected by caching and rate limiting.
 - **Sample Report:** [docs/examples/demo_report.html](docs/examples/demo_report.html) — downloadable HTML dossier mirroring the dashboard presentation.
 
